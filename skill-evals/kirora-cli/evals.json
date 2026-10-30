@@ -1,0 +1,73 @@
+{
+  "skill_name": "kirora-cli",
+  "description": "Prompts an agent with the kirora-cli skill should turn into the commands described. Check every expected command against `kirora commands` when the CLI changes.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add or update the contact cust_1042 with the email ada@example.com in Kirora.",
+      "expectations": [
+        "Uses `kirora contacts identify`, not `contacts create`",
+        "Passes `--external-id cust_1042` and `--email ada@example.com`"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Give me the email address of every contact in the VIP segment, seg_9.",
+      "expectations": [
+        "Uses `kirora contacts list --segment-id seg_9 --paginate`",
+        "Reads one JSON item per line (for example with `jq -r .email`), not a `data` array"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Send the transactional email in message.json for order 1001, and make sure a retry can't send it twice.",
+      "expectations": [
+        "Uses `kirora transactional send -d @message.json`",
+        "Passes an `--idempotency-key` tied to the order, such as `order-1001`, and reuses it on a retry"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Delete the list 3f1c2a9e-0000-4000-8000-000000000000.",
+      "expectations": [
+        "Uses `kirora lists delete 3f1c2a9e-0000-4000-8000-000000000000` (or `lists rm`)",
+        "Adds `--yes`, since the user asked for the deletion and no one is at a terminal"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Tag segment seg_1 as vip, but show me the request before you send it.",
+      "expectations": [
+        "Runs `kirora segments update seg_1 --tags vip --dry-run` first",
+        "Puts the id before `--tags`, so the list flag doesn't take it",
+        "Sends without `--dry-run` only after the user agrees"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Unsubscribe the contact with the email ada@example.com from the topic top_news.",
+      "expectations": [
+        "Uses `kirora contacts topics set`, with the contact and `top_news` as arguments or as `--contact-id` and `--topic-id`",
+        "Passes `--id-type email` so the email address is read as the contact's id",
+        "Sends the choice itself in `--data`, as the body has no flag for it"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "I'm building a webhook handler on localhost:3000/webhooks. Let me see Kirora's delivery events hit it; my ngrok URL is https://abc.ngrok.app.",
+      "expectations": [
+        "Uses `kirora webhooks listen --url https://abc.ngrok.app`",
+        "Adds `--forward-to localhost:3000/webhooks`",
+        "May narrow with `--events message.delivered`; doesn't create a permanent webhook with `webhooks create`"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Kirora commands keep failing for me with an auth error. What's wrong?",
+      "expectations": [
+        "Runs `kirora doctor` or `kirora whoami` before guessing",
+        "Never asks for the API key to be pasted into a command, and never prints one"
+      ]
+    }
+  ]
+}

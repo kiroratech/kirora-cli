@@ -1,0 +1,44 @@
+{
+  "name": "@kirora/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kirora CLI",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "kirora": "dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "llms.txt"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "codegen": "node scripts/codegen.mjs",
+    "start": "tsx src/bin.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "codegen:check": "node scripts/codegen.mjs --check",
+    "smoke": "pnpm build && node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@inquirer/confirm": "^6.3.5",
+    "@inquirer/password": "^5.2.3",
+    "@kirora/node": "link:../node-sdk",
+    "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.1",
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@8.6.0"
+}
