@@ -1,211 +1,247 @@
 # Kirora CLI
 
-`kirora` calls the Kirora API from a shell: one command for each operation the API
-publishes, generated from its spec. It is built on the Node.js library (`@kirora/node`),
-so authentication, retries and errors behave as they do there.
+Manage contacts, send messages, and test Kirora webhooks from your terminal.
 
-> Not published yet. What has to happen first is in the API repository's
-> `docs/production-checklist.md`.
+> Development preview. The CLI is not published to npm yet. Build it locally using
+> the steps below.
 
-## Install
+[Quick start](#quick-start) · [Examples](#examples) ·
+[Authentication](#authentication) · [Development](#development)
 
-Needs Node.js 22.13 or later.
+## Build locally
+
+Requires Node.js 22.13 or later and pnpm. Check out
+[`node-sdk`](https://github.com/kiroratech/node-sdk) alongside this repository,
+then run these commands from the CLI checkout:
 
 ```sh
-npm install -g @kirora/cli
-kirora --version
+(cd ../node-sdk && pnpm install && pnpm build)
+pnpm install
+pnpm build
+node dist/bin.js --version
 ```
+
+In the examples below, replace `kirora` with `node dist/bin.js` from this checkout.
 
 ## Quick start
 
-```sh
-kirora login                      # paste an API key at a masked prompt; it's checked, then saved
-kirora whoami                     # the workspace, key and profile commands will use
+Log in with your workspace's API key. The prompt hides your input and validates
+the key before saving it. Check the workspace and credentials with `whoami`:
 
-kirora lists create --name VIPs
-kirora lists                      # a resource on its own lists it
+```sh
+kirora login
+kirora whoami
+kirora lists list --limit 5
+```
+
+Listing needs `lists:read` access. To preview a change:
+
+```sh
+kirora lists create --name VIPs --dry-run
+```
+
+`--dry-run` prints the request without sending it or requiring a login. Remove
+it to create the list. Run `kirora doctor` if setup fails.
+
+## Examples
+
+### Work with contacts
+
+Preview creating or updating a contact using your application's customer ID:
+
+```sh
+kirora contacts identify --external-id cust_1042 --email ada@example.com --dry-run
+```
+
+Replace the example values and remove `--dry-run` to apply the change.
+To print every contact's email address, use `--paginate` with `jq`:
+
+```sh
 kirora contacts list --paginate | jq -r .email
-kirora contacts identify --external-id cust_1042 --email ada@example.com
-kirora campaigns send 01a1…       # an id from the path is an argument
-kirora webhooks deliveries list   # a sub-collection is a group of its own
-
-# Check a request before sending it.
-kirora segments update seg_1 --tags vip --dry-run
-
-# A receipt, safe to retry.
-kirora transactional send -d @message.json --idempotency-key order-1001
-
-# A partner key acting in one tenant.
-kirora contacts list --workspace tenant-42
 ```
 
-## Finding a command
+### Send a transactional email
 
-Every command is `kirora <resource> <action>`, named after the API path:
-
-- the resource is the path's first segment (`/v1/sending-domains/{id}/check` →
-  `sending-domains check`);
-- a path segment that two or more operations share is a group of its own
-  (`/v1/webhooks/deliveries/{id}` → `webhooks deliveries get`);
-- a read of a sub-path is named after it (`campaigns metrics <id>`);
-- `list` is a resource's default (`kirora lists`); `ls` and `rm` are short for `list` and
-  `delete`.
-
-`kirora --help` lists the resources and `kirora lists --help` a resource's actions.
-`kirora lists create --help` shows:
-
-- what the action does, and the scope its key needs;
-- its flags;
-- the body fields only `--data` can carry, with their shapes (`*` marks the required ones);
-- the API reference's examples, as commands to paste, and a link to the reference page.
-
-`kirora commands` prints every command, with its arguments and options, as JSON.
-`kirora completion bash|zsh|fish` prints a shell completion script; it asks the CLI at each
-Tab, so it always knows the installed version's commands:
+Use a configured template and a key with `transactional:send` access. Replace the
+recipient and template name:
 
 ```sh
-echo 'source <(kirora completion bash)' >> ~/.bashrc
-echo 'source <(kirora completion zsh)' >> ~/.zshrc     # after compinit
-kirora completion fish > ~/.config/fish/completions/kirora.fish
+kirora transactional send --idempotency-key order-1001 --dry-run -d '{
+  "to": { "email": "recipient@example.com" },
+  "email": { "template": "order-receipt" },
+  "data": { "order_id": "1001" }
+}'
 ```
 
-## Arguments, flags and bodies
+Remove `--dry-run` to send. Reuse the same idempotency key when retrying this
+request. Use a new key for a different message.
 
-- **Ids** in the path are arguments, in order. With two, each is also a flag:
-  `kirora contacts topics set --contact-id c1 --topic-id t1`.
-- **Query parameters and simple body fields** (text, numbers, true/false, lists of text)
-  are flags: `--external-id`, `--sensitive` and `--no-sensitive`. The API's own spelling
-  (`--externalId`) works too. A list flag takes every value up to the next flag, so put ids
-  before it.
-- **Anything nested** goes in `-d, --data` as JSON: inline, `@file.json`, or `-` for stdin.
-  Flags set fields on top of it.
-- **A file upload** takes the file's path: `kirora assets upload --file logo.png --name Logo`.
-- **`--dry-run`** prints the request (`{ "dryRun": true, "request": … }`) and sends
-  nothing. It needs no login.
-- **`--idempotency-key`** makes a retry safe. Without one, each run makes its own key.
-- **Deletes** ask first at a terminal. Anywhere else they need `--yes`, or fail with
-  `CONFIRMATION_REQUIRED`, so a script or an agent can't delete by accident.
+Transactional sends ignore marketing preferences. Use them for receipts, password
+resets, and similar messages. Agent keys cannot use this action.
 
-## Output and errors
+### Test a local webhook handler
 
-- **A success** prints the response body on stdout, as the API sent it: JSON, or CSV for
-  `messages exports download`, streamed as it arrives.
-- **`--paginate`** follows a list's cursors and prints one item per line, ready for `jq`.
-- **`-i`** prints the HTTP status and headers first. It can't be combined with
-  `--paginate`.
-- **Any failure** prints `{ "error": { "code", "message", … } }` on stderr, so a pipeline
-  only ever sees a success. An API error carries the API's own code, its `status`, the
-  fields that failed (`errors`), `requestId` and `retryAfterSeconds`. The CLI's own codes,
-  such as `NOT_LOGGED_IN`, are listed in
-  [`skills/kirora-cli/SKILL.md`](skills/kirora-cli/SKILL.md#error-codes).
-
-| Exit code | Means                                                                                                                                        |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`       | Success.                                                                                                                                     |
-| `1`       | The call or command failed.                                                                                                                  |
-| `2`       | The command couldn't be read (`USAGE_ERROR`): an unknown flag, a missing id or required flag, a value that isn't a number. Nothing was sent. |
-
-## Credentials
-
-A command's key comes from, in order:
-
-1. the profile named by `--profile` (`-p`) or `KIRORA_PROFILE`;
-2. `KIRORA_API_KEY`, with `KIRORA_API_URL` and `KIRORA_WORKSPACE`, for CI and scripts;
-3. the active profile: `default`, unless `kirora auth switch <name>` chose another, or
-   your first login used another name.
-
-`kirora login` reads the key from a masked prompt, or from stdin
-(`printf %s "$KEY" | kirora login`), never from a flag, where it would land in shell
-history. It checks the key against `GET /v1/me`, then saves it:
-
-- in the system keychain: the macOS Keychain, or the Secret Service (GNOME Keyring,
-  KWallet) on Linux through `secret-tool`. The key reaches either on stdin, never as an
-  argument;
-- in the config file instead where there is no keychain (Windows, or Linux without one),
-  or with `--insecure-storage` or `KIRORA_CREDENTIAL_STORE=file`.
-
-Each login is kept in `$XDG_CONFIG_HOME/kirora/config.json` (`~/.config/kirora/config.json`),
-readable only by you. `--base-url` (or `KIRORA_API_URL`) and `--workspace` (or
-`KIRORA_WORKSPACE`) at login save another host or a partner's tenant with the profile.
-
-- `kirora login --profile <name>` saves another login.
-- `kirora logout` removes a login and its key. A key the keychain won't give up is retried at
-  the next login or logout, and `kirora doctor` warns about it meanwhile.
-- `kirora auth list` lists the profiles (never their keys); `kirora auth switch` and
-  `kirora auth rename` choose and rename them.
-- `kirora doctor` checks Node.js, the config file, which key is used and where it's kept,
-  and that the API accepts it. It prints `{ ok, checks }` and exits 1 if a check fails.
-
-## Webhooks while developing
+Start your handler at `http://localhost:3000/webhooks`.
+In **Terminal 1**, open a tunnel to the CLI's listener port:
 
 ```sh
 ngrok http 4318
-kirora webhooks listen --url https://example.ngrok.app --forward-to localhost:3000/webhooks
 ```
 
-`kirora webhooks listen` subscribes a webhook for as long as it runs. It checks each
-delivery's signature and prints the delivery as a JSON line. With `--forward-to` it posts
-each one on to your handler, signature headers and all, and answers Kirora with your
-handler's status; it prints the signing secret for your handler to verify them with.
-`--events` narrows what it receives.
+In **Terminal 2**, replace the public URL with your tunnel's HTTPS URL:
 
-Ctrl+C, or the reader of its output stopping (`| head -n 1`), deletes the webhook; a second
-Ctrl+C stops waiting for that. A webhook it couldn't delete, or one already subscribed to
-the URL, is named with the command that deletes it. As the tunnel makes it public, it
-reads nothing unsigned and refuses a body over 1 MiB.
+```sh
+kirora webhooks listen \
+  --url https://example.ngrok.app \
+  --forward-to localhost:3000/webhooks
+```
 
-## Use with an AI agent
+The listener creates a temporary subscription, verifies deliveries, and forwards
+only verified requests. Deliveries print as JSON lines on stdout. The signing
+secret prints on stderr; give it to your handler to verify forwarded requests.
+Kirora receives your handler's response status.
 
-Paste this into your agent (Claude Code, Cursor, Copilot and so on):
+Press Ctrl+C to stop and delete the subscription. If cleanup fails, the CLI prints
+a command to delete it manually. Use `--events` to select event types.
+
+## Commands and input
+
+Use help to find commands, flags, required scopes, and request examples:
+
+```sh
+kirora --help
+kirora contacts --help
+kirora contacts identify --help
+```
+
+The [resource references](skills/kirora-cli/references/) cover every command.
+`kirora commands` prints the command tree as JSON.
+
+- `kirora lists` runs `kirora lists list`. `ls` and `rm` alias `list` and `delete`.
+- Path IDs are arguments. Commands with multiple IDs also accept named flags,
+  such as `--contact-id` and `--topic-id`.
+- Simple fields are flags: `--external-id`, `--sensitive`, or `--no-sensitive`.
+- Nested fields use `-d` / `--data`: inline JSON, `@file.json`, or `-` for stdin.
+  Field flags override matching JSON fields.
+- Put IDs before list-valued flags: `--tags a b` consumes values until the next flag.
+- Uploads take a file path: `kirora assets upload --file logo.png`.
+
+### Shell completion
+
+Add one of these lines to your shell configuration:
+
+```sh
+# ~/.bashrc
+source <(kirora completion bash)
+
+# ~/.zshrc, after compinit
+source <(kirora completion zsh)
+```
+
+For fish:
+
+```fish
+kirora completion fish > ~/.config/fish/completions/kirora.fish
+```
+
+## Authentication
+
+Credentials are selected in this order:
+
+1. The profile named by `--profile` (`-p`) or `KIRORA_PROFILE`.
+2. `KIRORA_API_KEY`, with optional `KIRORA_API_URL` and `KIRORA_WORKSPACE`.
+3. The active saved profile.
+
+Your first login becomes active. Save and switch profiles with:
+
+```sh
+kirora login --profile staging
+kirora auth list
+kirora auth switch staging
+```
+
+`--profile <name>` selects a profile for one command. `auth rename <name> <new-name>`
+renames it; `logout` removes the selected login and attempts to delete its key.
+The CLI reports failed keychain cleanup and retries at the next login or logout.
+
+Keys are stored in macOS Keychain or Linux Secret Service when available.
+Otherwise, including on Windows, they are saved as plaintext in the config file.
+Use `--insecure-storage` or `KIRORA_CREDENTIAL_STORE=file` to select file storage.
+
+Profile settings live in `$XDG_CONFIG_HOME/kirora/config.json`, defaulting to
+`~/.config/kirora/config.json`. On Unix systems, the file has owner-only permissions.
+
+For a partner key, `--workspace <externalId>` selects a tenant. At login,
+`--base-url` and `--workspace` save a host and tenant with the profile.
+Their environment-variable equivalents also work.
+
+## Scripts and output
+
+In CI, provide `KIRORA_API_KEY` through your secret store instead of logging in.
+For commands that accept `--idempotency-key`, reuse it when retrying the same
+request. Some commands require a key; others generate a new one per invocation.
+
+Deletes require confirmation at an interactive terminal. In scripts and CI,
+add `--yes` to confirm the deletion or receive `CONFIRMATION_REQUIRED`.
+
+Responses go to stdout as JSON, or streamed CSV for `messages exports download`.
+`--paginate` prints one JSON item per line; without it, lists return one page.
+Command failures print `{ "error": { "code", "message", … } }` on stderr.
+Diagnostics and warnings also use stderr.
+
+| Exit code | Meaning                                    |
+| --------- | ------------------------------------------ |
+| `0`       | Success.                                   |
+| `1`       | The request or command failed.             |
+| `2`       | Invalid command line. No request was sent. |
+
+Lists and downloads can produce partial output before failing, so check the exit
+code. `-i` adds HTTP status and headers to stdout and cannot be used with
+`--paginate`. See the [error codes](skills/kirora-cli/SKILL.md#error-codes) for details.
+
+## AI agents
+
+After building locally, give your agent this prompt:
 
 ```text
-Set up the Kirora CLI for me: install @kirora/cli, then follow its llms.txt step by step
-(`kirora --help` prints where it is). Ask me for the API key, and let me log in myself.
+Read llms.txt and help me set up the Kirora CLI using this checkout's local build.
+Let me enter my API key directly in the login prompt.
 ```
 
-- [`llms.txt`](llms.txt) walks the agent through installing, logging in or setting up CI,
-  checking it works, and running commands safely.
-- The skill in [`skills/kirora-cli/`](skills/kirora-cli/) holds every rule (`SKILL.md`) and
-  a page per resource (`references/`), generated with the commands.
-  [`skill-evals/kirora-cli/evals.json`](skill-evals/kirora-cli/evals.json) holds prompts to
-  check an agent with.
-- Assistants that don't run commands locally can use hosted MCP instead: `POST /mcp` with
-  an agent key as a Bearer token.
+[`llms.txt`](llms.txt) covers setup. The [CLI skill](skills/kirora-cli/SKILL.md)
+covers commands, retries, errors, and deletion rules.
 
 ## Development
 
-Until `@kirora/node` is on npm, the library is linked from `../node-sdk`; build it there
-first.
+Commands are generated from OpenAPI and use the Node.js SDK for API requests.
+The SDK is linked from `../node-sdk` until publication.
 
 ```sh
-pnpm install
-pnpm start -- lists list    # from source
+node --import tsx src/bin.ts --help    # run from source
 pnpm test
-pnpm build                   # to dist/
-pnpm codegen                 # regenerate the commands from the pinned spec
-pnpm codegen:check           # fail if the commands or the skill's pages are behind it
+pnpm build
+pnpm codegen
+pnpm codegen:check
 ```
 
-The commands are generated by `scripts/codegen.mjs` from the commit of
-[kiroratech/openapi](https://github.com/kiroratech/openapi) that `spec/source.json` names,
-as the Node.js library's are. Codegen fails if the download doesn't match the file's
-`version` and `sha256`, so change the commit, `version` and `sha256` together. It also
-fails if an API query parameter would get no flag. `pnpm codegen path/to/openapi.json` (or `KIRORA_OPENAPI_SPEC`) uses an
-unpublished spec instead, without those checks.
+[`spec/source.json`](spec/source.json) pins the OpenAPI commit, version, and
+checksum; update them together. To use a local spec, run
+`pnpm codegen path/to/openapi.json` or set `KIRORA_OPENAPI_SPEC`.
 
-`pnpm smoke` builds the CLI and runs it against a real workspace, reading only. It
-creates, changes, sends and deletes nothing, and uses a config folder of its own, so your
-saved logins and keychain are left alone. Give it a staging workspace's key, and
-`--verbose` to see each command's output:
+For read-only checks against a staging workspace, set `KIRORA_SMOKE_API_KEY` and
+optionally `KIRORA_SMOKE_API_URL`, then run `pnpm smoke`. Add `--verbose` to see
+each command's output. The smoke test uses a temporary config directory.
 
-```sh
-KIRORA_SMOKE_API_KEY=kirora_… KIRORA_SMOKE_API_URL=https://staging-api.example pnpm smoke
-```
+[CI](.github/workflows/ci.yml) checks formatting, types, generated files, the build,
+and tests on Linux, macOS, and Windows with Node.js 22 and 24.
+[Skill evaluations](skill-evals/kirora-cli/evals.json) check agent behavior.
 
-CI (`.github/workflows/ci.yml`) checks formatting, types, that the commands match the
-pinned spec, and the build, then runs the tests on Linux, macOS and Windows with Node.js
-22 and 24. Like local development, it builds `kiroratech/node-sdk` beside this repository
-first, until `@kirora/node` is on npm.
+## Troubleshooting
+
+Use `kirora whoami` to check the selected workspace and credentials.
+Run `kirora doctor` to check setup and API access. When reporting a problem,
+include the CLI version, command, error code, and request ID if available.
+Remove API keys and personal data from the report.
 
 ## License
 
