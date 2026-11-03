@@ -131,7 +131,10 @@ export function hangUntilAborted(init: RequestInit): Promise<Response> {
 
 /** The local port `webhooks listen` says it's listening on, once it does. */
 export async function listeningPort(output: { stderr: string }): Promise<string> {
-  await vi.waitFor(() => expect(output.stderr).toContain('Listening'));
+  // Long enough for a spawned kirora to start under tsx, slowest on Windows.
+  await vi.waitFor(() => expect(output.stderr).toContain('Listening'), {
+    timeout: 10_000,
+  });
   return /localhost:(\d+)/.exec(output.stderr)![1]!;
 }
 

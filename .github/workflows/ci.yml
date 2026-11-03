@@ -43,6 +43,10 @@ jobs:
         working-directory: cli
       - run: pnpm build
         working-directory: cli
+      # Packs the package (building it through `prepack`), installs the tarball globally
+      # and runs the installed kirora.
+      - run: pnpm check:package
+        working-directory: cli
 
   # Keychains, file locks, signals and child processes differ by platform.
   test:

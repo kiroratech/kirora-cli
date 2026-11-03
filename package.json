@@ -44,6 +44,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "codegen:check": "node scripts/codegen.mjs --check",
+    "check:package": "node scripts/check-package.mjs",
     "smoke": "pnpm build && node scripts/smoke.mjs"
   },
   "dependencies": {

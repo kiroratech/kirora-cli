@@ -244,7 +244,7 @@ pnpm codegen
 pnpm codegen:check
 ```
 
-[`spec/source.json`](../spec/source.json) pins the OpenAPI commit, version, and checksum;
+[`spec/source.json`](https://github.com/kiroratech/kirora-cli/blob/main/spec/source.json) pins the OpenAPI commit, version, and checksum;
 update them together. To use a local spec, run `pnpm codegen path/to/openapi.json` or
 set `KIRORA_OPENAPI_SPEC`.
 
@@ -252,6 +252,11 @@ For read-only checks against staging, set `KIRORA_SMOKE_API_KEY` and optionally
 `KIRORA_SMOKE_API_URL`, then run `pnpm smoke`. Pass `--verbose` to see each command's
 output. The smoke test uses a temporary config directory; it still makes real API calls.
 
-[CI](../.github/workflows/ci.yml) checks formatting, types, generation, and builds, and
+[CI](https://github.com/kiroratech/kirora-cli/blob/main/.github/workflows/ci.yml) checks formatting, types, generation, and builds, and
 runs tests on Linux, macOS, and Windows with Node.js 22 and 24.
-[Skill evaluations](../skill-evals/kirora-cli/evals.json) describe agent behavior checks.
+[Skill evaluations](https://github.com/kiroratech/kirora-cli/blob/main/skill-evals/kirora-cli/evals.json) describe agent behavior checks.
+
+To release, bump `version` in `package.json` and merge it to `main`, or push a matching
+`v*` tag. The [release workflow](https://github.com/kiroratech/kirora-cli/blob/main/.github/workflows/release.yml)
+publishes that version to npm if it isn't there yet, with npm trusted publishing: no npm
+token is stored. `pnpm check:package` runs the same install check locally.

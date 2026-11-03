@@ -123,7 +123,10 @@ describe('kirora CLI', () => {
     ];
     expect(await runCli(login, io)).toBe(0);
     expect(output.stdout).toContain('Logged in to Acme');
-    expect((await stat(configPath(io.env))).mode & 0o777).toBe(0o600);
+    // Windows has no permission bits to check: every file reads as 0o666.
+    if (process.platform !== 'win32') {
+      expect((await stat(configPath(io.env))).mode & 0o777).toBe(0o600);
+    }
 
     expect(await runCli(['lists', 'list'], io)).toBe(0);
     const [url, init] = fetch.mock.calls[1]!;
@@ -508,8 +511,12 @@ describe('kirora CLI', () => {
 
     expect(await runCli(['--help'], io)).toBe(0);
 
-    const paths = output.stdout.match(/\/\S+\.(?:txt|md)/g) ?? [];
-    expect(paths.map((path) => path.split('/').at(-1))).toEqual(['llms.txt', 'SKILL.md']);
+    // Absolute paths: /… on Unix, C:\… on Windows.
+    const paths = output.stdout.match(/(?:[A-Za-z]:)?[\\/]\S+\.(?:txt|md)/g) ?? [];
+    expect(paths.map((path) => path.split(/[\\/]/).at(-1))).toEqual([
+      'llms.txt',
+      'SKILL.md',
+    ]);
     for (const path of paths) expect(existsSync(path)).toBe(true);
   });
 
@@ -970,33 +977,13 @@ describe('kirora CLI', () => {
     );
   });
 
-  it('ships every file the README links to, and installs as llms.txt does', () => {
-    const root = fileURLToPath(new URL('..', import.meta.url));
-    const read = (path: string) => readFileSync(join(root, path), 'utf8');
-    // npm packs these whatever "files" says.
-    const shipped = [
-      ...(JSON.parse(read('package.json')) as { files: string[] }).files,
-      'README.md',
-      'LICENSE',
-      'package.json',
-    ];
-    const readme = read('README.md');
-
-    const links = [...readme.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)]
-      .map(([, target]) => target!)
-      .filter((target) => !/^[a-z]+:/.test(target));
-    expect(links.length).toBeGreaterThan(0);
-    for (const link of links) {
-      expect(existsSync(join(root, link)), link).toBe(true);
-      expect(
-        shipped.some((entry) => link === entry || link.startsWith(`${entry}/`)),
-        `${link} is linked from the README but not in package.json "files"`,
-      ).toBe(true);
-    }
-
+  // pnpm check:package checks the links in the docs the package ships.
+  it('installs as llms.txt says, the same way as the README', () => {
+    const read = (path: string) =>
+      readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
     const install = (text: string) => /^\s*(npm install -g \S+)$/m.exec(text)?.[1];
     expect(install(read('llms.txt'))).toBeDefined();
-    expect(install(read('llms.txt'))).toBe(install(readme));
+    expect(install(read('llms.txt'))).toBe(install(read('README.md')));
   });
 });
 
