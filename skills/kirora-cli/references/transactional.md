@@ -29,8 +29,8 @@ Sends a one-off message to one recipient — a receipt, a password reset, a conf
 | --- | --- |
 | `--sensitive`, `--no-sensitive` | Set when the message carries a secret (a reset link, a one-time code): its content is kept only while the message is queued or sending, and removed once sending finishes, whatever the workspace's retention says. |
 | `--correlation-id <id>` | Your own reference for this send, echoed on its webhooks and its read. |
-| `--send-at <date-time>` | When to send, up to 90 days ahead, with its UTC offset. Suppression and push reachability are checked when the request is accepted and again when it goes; `deliver: first` picks its channel when accepted. |
-| `--deliver <value>` | With both `push` and `email`: `all` sends each the contact can receive; `first` sends push when the contact has a reachable device, else email. One of `all`, `first`. |
+| `--send-at <date-time>` | When to send, up to 90 days ahead, with its UTC offset. Suppression and push reachability are checked when the request is accepted and again when it goes. A `fallbackOrder` fallback keeps this time but goes only after the message before it fails, is skipped or bounces. |
+| `--fallback-order <values...>` | With both `push` and `email`, each once, in the order to try them: the first the contact can receive is sent, and the next only if it fails, is skipped or bounces. Left out, each channel the contact can receive is sent. |
 
 ```text
 Body fields only --data can carry (* required):
@@ -47,7 +47,7 @@ Examples:
   Email written in the request:
     $ kirora transactional send -d '{"to":{"email":"amaka@example.com"},"sensitive":true,"data":{"code":"482913"},"email":{"subject":"Your sign-in code","from":"Juniper Kitchen <security@juniperkitchen.com>","html":"<p>Your code is <strong>{{ data.code }}</strong>. It expires in 10 minutes.</p>","text":"Your code is {{ data.code }}. It expires in 10 minutes."}}'
   Push and email together:
-    $ kirora transactional send -d '{"to":{"contactId":"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d"},"correlationId":"delivery-7731","push":{"pushProjectId":"0192f3a1-91d4-7b2a-8c3e-4d5e6f7a8b9c","title":"Order {{ data.order_id }} is on its way","body":"Arriving {{ data.eta }}."},"data":{"order_id":"7731","eta":"Thursday"},"email":{"template":"order-shipped"},"deliver":"all"}'
+    $ kirora transactional send -d '{"to":{"contactId":"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d"},"correlationId":"delivery-7731","push":{"pushProjectId":"0192f3a1-91d4-7b2a-8c3e-4d5e6f7a8b9c","title":"Order {{ data.order_id }} is on its way","body":"Arriving {{ data.eta }}."},"data":{"order_id":"7731","eta":"Thursday"},"email":{"template":"order-shipped"}}'
 
 API reference: https://kirora.io/docs/api/reference/sendTransactionalMessage
 ```

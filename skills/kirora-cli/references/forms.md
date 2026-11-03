@@ -39,6 +39,7 @@ Creates a hosted form (a sign-up, contact, waitlist or registration form), in dr
 | `--list-id <id>` | The list every submitter is added to; `null` while the draft has none. A form cannot be published without one. |
 | `--allowed-origins <urls...>` | Site origins (scheme and host, no path) the embed may load from, such as `https://example.com`. |
 | `--double-opt-in`, `--no-double-opt-in` | Ask submitters to confirm by email before they are subscribed. |
+| `--notify-user-ids <ids...>` | Users of this workspace to tell about each submission, in the bell and by email (each can turn the email off). Each must be a user here. |
 
 ```text
 Body fields only --data can carry (* required):
@@ -47,7 +48,7 @@ Body fields only --data can carry (* required):
   fields*       list of { key*, type*, label*, placeholder, required, options }
                 The fields, top to bottom.
   hiddenFields  object
-                Values saved on each submitter with no field shown, each a contact attribute: fixed (`"spring"`), or taken from the link (`{ "fromParam": "utm_campaign" }`).
+                Values saved on each submitter with no field shown, each a contact attribute: fixed (`{ "source": "fixed", "value": "spring" }`), or taken from the link (`{ "source": "link", "param": "utm_campaign" }`).
   theme         { mode, accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily, borderRadius, buttonLabel, inputs, button, layout }
   display       one of { mode*: "inline" } | { mode*: "popup", delay, scrollPercent, exitIntent, urlMatch, hideFor, hideAfterSubmit }
   captcha       one of { mode*: "kirora" } | { mode*: "own", siteKey*, secretKey }
@@ -59,7 +60,7 @@ Body fields only --data can carry (* required):
 
 Examples:
   A newsletter signup with double opt-in:
-    $ kirora forms create -d '{"name":"Newsletter signup","heading":"Join the Acme Shop newsletter","intro":"New arrivals and offers, once a week.","location":"website-footer","slug":"acme-newsletter","share":{"title":"Get the Acme Shop newsletter"},"hiddenFields":{"signup_campaign":{"fromParam":"utm_campaign"}},"listId":"0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e","fields":[{"key":"email","type":"email","label":"Email address","placeholder":"you@example.com","required":true},{"key":"firstName","type":"text","label":"First name","required":false}],"allowedOrigins":["https://acme-shop.com"],"doubleOptIn":true,"theme":{"accentColor":"#b4461f","fontFamily":"sans","buttonLabel":"Subscribe"},"consent":{"required":true,"label":"I agree to receive emails from Acme Shop and can unsubscribe at any time."},"success":{"type":"message","message":"Thanks. Check your inbox to confirm."}}'
+    $ kirora forms create -d '{"name":"Newsletter signup","heading":"Join the Acme Shop newsletter","intro":"New arrivals and offers, once a week.","location":"website-footer","slug":"acme-newsletter","share":{"title":"Get the Acme Shop newsletter"},"hiddenFields":{"signup_campaign":{"source":"link","param":"utm_campaign"}},"listId":"0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e","fields":[{"key":"email","type":"email","label":"Email address","placeholder":"you@example.com","required":true},{"key":"firstName","type":"text","label":"First name","required":false}],"allowedOrigins":["https://acme-shop.com"],"doubleOptIn":true,"notifyUserIds":[],"theme":{"accentColor":"#b4461f","fontFamily":"sans","buttonLabel":"Subscribe"},"consent":{"required":true,"label":"I agree to receive emails from Acme Shop and can unsubscribe at any time."},"success":{"type":"message","message":"Thanks. Check your inbox to confirm."}}'
 
 API reference: https://kirora.io/docs/api/reference/createForm
 ```
@@ -164,6 +165,8 @@ Submits a double opt-in form for a person your own system signs up: the answers 
 Body fields only --data can carry (* required):
   fields*  object
            Answers by field `key`.
+  choices  object
+           Each checkbox field's ticked option values, by field `key`.
 
 Examples:
   Sign up a person your system collected; they confirm by email:
@@ -176,7 +179,7 @@ API reference: https://kirora.io/docs/api/reference/submitForm
 
 Unarchive a form. `POST /v1/forms/{id}/unarchive`, needs `forms:write`.
 
-Returns an archived form to the list. A form that was published is live again at once, so an agent key cannot unarchive a published form (403 `AGENT_KEY_REFUSED`).
+Returns an archived form to the list. A form that was published is live again at once, so an agent key cannot unarchive a published form (403 `AGENT_KEY_REFUSED`). One whose list, or a list its `lists` field offers, was deleted while it was archived comes back as a `draft`: choose its lists and publish it again.
 
 - `--idempotency-key`: reuse the same key to retry safely.
 
@@ -218,6 +221,7 @@ Changes a form's fields, consent text or success behaviour. Existing submissions
 | `--list-id <id>` | The list every submitter is added to; `null` clears it, which only a draft may. |
 | `--allowed-origins <urls...>` | Site origins (scheme and host, no path) the embed may load from. |
 | `--double-opt-in`, `--no-double-opt-in` | Ask submitters to confirm by email before they are subscribed. |
+| `--notify-user-ids <ids...>` | Users of this workspace to tell about each submission, in the bell and by email (each can turn the email off). Each must be a user here. |
 
 ```text
 Body fields only --data can carry (* required):

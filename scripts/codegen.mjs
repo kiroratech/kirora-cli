@@ -78,6 +78,7 @@ const FLAG_ALIASES = {
   chooseAbTestWinner: { version: 'ab-version' },
   previewCampaign: { version: 'ab-version' },
   getTemplateVersion: { version: 'template-version' },
+  renderTemplate: { version: 'template-version' },
   restoreTemplateVersion: { version: 'template-version' },
 };
 // Subcommand names for operations whose derived name would clash, by operationId.

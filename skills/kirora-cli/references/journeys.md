@@ -25,6 +25,16 @@ Examples:
 API reference: https://kirora.io/docs/api/reference/activateJourney
 ```
 
+## kirora journeys activation-check <id>
+
+Check a journey before activating. `GET /v1/journeys/{id}/activation-check`, needs `journeys:read`.
+
+Lists everything activating now would refuse, all at once and without activating: unfinished send steps, a list, segment, form, topic or webhook a step, the trigger or an exit names that is gone or off, a conversion goal exit without a goal, and for each finished send step an unverified sender or a sending domain without the DMARC record marketing email needs, the workspace's missing postal address or a push app not ready. Each issue gives the field to fix, the error code `activateJourney` would answer with for it and, on a step, the step's id. Empty `issues` means these checks pass; activation can still refuse for the plan's active journey limit or, for a journey an agent authored or edited, a person's confirmation. An ended journey has one issue on `status`; a workspace whose sending is stopped (suspended, or its deletion pending) has one on `workspace`.
+
+```text
+API reference: https://kirora.io/docs/api/reference/getJourneyActivationCheck
+```
+
 ## kirora journeys create
 
 Create a journey. `POST /v1/journeys`, needs `journeys:write`.

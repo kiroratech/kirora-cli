@@ -63,7 +63,7 @@ describe('--help', () => {
 
     expect(await runCli(['messages', 'deliveries', '--help'], io)).toBe(0);
     expect(output.stdout).toMatch(/Lists what each device reported for one push message/);
-    expect(output.stdout).toMatch(/A message that is not a push returns 404\./);
+    expect(output.stdout).toMatch(/Any other message returns 404 `NOT_FOUND`/);
 
     output.stdout = '';
     expect(await runCli(['messages', '--help'], io)).toBe(0);

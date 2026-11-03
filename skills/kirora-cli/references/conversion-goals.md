@@ -32,7 +32,7 @@ Examples:
   Count orders after the journey's messages as conversions, with revenue:
     $ kirora conversion-goals create -d '{"journeyId":"0192f3a4-3d5e-7a7f-8c43-6b8c9d0e1f2a","eventName":"Order Completed","valueProperty":"total","currency":"USD"}'
   Count only contacts' first orders of $50 or more:
-    $ kirora conversion-goals create -d '{"journeyId":"0192f3a4-3d5e-7a7f-8c43-6b8c9d0e1f2a","eventName":"Order Completed","where":[{"property":"total","operator":"gte","value":50}],"occurrence":"first","valueProperty":"total","currency":"USD"}'
+    $ kirora conversion-goals create -d '{"journeyId":"0192f3a4-3d5e-7a7f-8c43-6b8c9d0e1f2a","eventName":"Order Completed","where":[{"property":"total","operator":"gte","value":"50"}],"occurrence":"first","valueProperty":"total","currency":"USD"}'
 
 API reference: https://kirora.io/docs/api/reference/createConversionGoal
 ```

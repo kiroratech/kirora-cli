@@ -35,7 +35,7 @@ Creates a child workspace for one tenant of your product, identified by your own
 ```text
 Examples:
   A workspace for one of your tenants:
-    $ kirora workspaces create -d '{"name":"Acme Shop Lagos","externalId":"tenant-lagos-01","country":"NG","timezone":"Africa/Lagos"}'
+    $ kirora workspaces create -d '{"name":"Juniper Kitchen London","externalId":"tenant-lagos-01","country":"GB","timezone":"Europe/London"}'
 
 API reference: https://kirora.io/docs/api/reference/createWorkspace
 ```
@@ -120,7 +120,7 @@ Changes a tenant workspace's name, country or timezone; a field left out is unch
 ```text
 Examples:
   Rename the workspace:
-    $ kirora workspaces update <external-id> -d '{"name":"Acme Shop Nigeria"}'
+    $ kirora workspaces update <external-id> -d '{"name":"Juniper Kitchen UK"}'
 
 API reference: https://kirora.io/docs/api/reference/updateWorkspace
 ```

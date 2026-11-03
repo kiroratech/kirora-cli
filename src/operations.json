@@ -275,19 +275,19 @@
     ]
   },
   {
-    "name": "brand-theme",
-    "description": "Retrieve the workspace brand theme",
+    "name": "brand-kit",
+    "description": "Retrieve the workspace brand kit",
     "operations": [
       {
         "action": "get",
-        "operationId": "getBrandTheme",
+        "operationId": "getBrandKit",
         "method": "GET",
-        "path": "/v1/brand-theme",
-        "summary": "Retrieve the workspace brand theme",
-        "details": "Returns the workspace brand theme. Every email's `theme` holds only the fields it overrides; the rest come from here. A change restyles templates and draft campaigns and journeys at once. Scheduling or sending a campaign, activating a journey and publishing a template freeze the look that email goes out with, so nothing already approved changes. Templates saved before the brand existed carry every field, so they keep their look until a field is reset.",
+        "path": "/v1/brand-kit",
+        "summary": "Retrieve the workspace brand kit",
+        "details": "Returns the workspace brand kit. Until it is saved, it holds the defaults: an empty `theme`, no `name`, logo, links, header or footer, and `updatedAt` null. Every email's `theme` holds only the fields it overrides; the rest come from here. A `header` block without an image shows the brand kit's logo, and a `social` block without links shows its social links. A change restyles templates and draft campaigns and journeys at once. Scheduling or sending a campaign, activating a journey and publishing a template freeze the brand kit that email goes out with, so nothing already approved changes. The default header and footer are what gallery and Kiro designs open and close with; emails that place them follow the shared blocks' own changes.",
         "scope": "templates:read",
         "query": [],
-        "help": "\nAPI reference: https://kirora.io/docs/api/reference/getBrandTheme\n"
+        "help": "\nAPI reference: https://kirora.io/docs/api/reference/getBrandKit\n"
       }
     ]
   },
@@ -319,7 +319,7 @@
         "method": "GET",
         "path": "/v1/campaigns/{id}/breakdown",
         "summary": "Retrieve a campaign's email results by domain, device or country",
-        "details": "Splits a campaign's email results into rows by the recipient's email domain (`gmail.com`), the device they first opened or clicked on (`desktop`, `mobile`, `tablet`), or the contact's country (`NG`), counted the same way as the campaign's metrics. Use it to find where a problem sits: bounces concentrated on one domain point at that mailbox provider, not at the whole list.",
+        "details": "Splits a campaign's email results into rows by the recipient's email domain (`gmail.com`), the device they first opened or clicked on (`desktop`, `mobile`, `tablet`), or the contact's country (`GB`), counted the same way as the campaign's metrics. Use it to find where a problem sits: bounces concentrated on one domain point at that mailbox provider, not at the whole list.",
         "scope": "campaigns:read",
         "pathParams": [
           {
@@ -701,7 +701,7 @@
         "query": [],
         "body": [],
         "idempotencyKey": "optional",
-        "help": "\nThe body (--data) is one of:\n  { type*: \"fixed\", sendAt* }\n  { type*: \"local_time\", localDateTime*, timezoneIfUnknown, ifTimeHasPassed }\n\nExamples:\n  Everyone receives it at the same moment, 08:00 UTC:\n    $ kirora campaigns schedule <id> -d '{\"type\":\"fixed\",\"sendAt\":\"2026-11-03T08:00:00.000Z\"}'\n  Each person receives it at 08:00 in their own timezone (Africa/Lagos where none is known):\n    $ kirora campaigns schedule <id> -d '{\"type\":\"local_time\",\"localDateTime\":\"2026-11-03T08:00\",\"timezoneIfUnknown\":\"Africa/Lagos\",\"ifTimeHasPassed\":\"skip\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/scheduleCampaign\n"
+        "help": "\nThe body (--data) is one of:\n  { type*: \"fixed\", sendAt* }\n  { type*: \"local_time\", localDateTime*, timezoneIfUnknown, ifTimeHasPassed }\n\nExamples:\n  Everyone receives it at the same moment, 08:00 UTC:\n    $ kirora campaigns schedule <id> -d '{\"type\":\"fixed\",\"sendAt\":\"2026-11-03T08:00:00.000Z\"}'\n  Each person receives it at 08:00 in their own timezone (Europe/London where none is known):\n    $ kirora campaigns schedule <id> -d '{\"type\":\"local_time\",\"localDateTime\":\"2026-11-03T08:00\",\"timezoneIfUnknown\":\"Europe/London\",\"ifTimeHasPassed\":\"skip\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/scheduleCampaign\n"
       },
       {
         "action": "send",
@@ -1202,7 +1202,7 @@
           }
         ],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  dates       object\n  attributes  object\n              Custom attributes, merged key by key; `null` removes one.\n  consent     { email, push, statement }\n  topics      object\n              Topic choices keyed by topic id, at most 50, as `PUT /v1/contacts/{id}/topics/{topicId}` sets them: `true` or `false` for every channel, or `{ \"email\": …, \"push\": … }` per channel.\n\nExamples:\n  By your own id, with consent:\n    $ kirora contacts identify -d '{\"externalId\":\"customer-4821\",\"email\":\"amaka@example.com\",\"firstName\":\"Amaka\",\"lastName\":\"Obi\",\"phone\":\"+2348031234567\",\"timezone\":\"Africa/Lagos\",\"dates\":{\"birthday\":\"1992-03-14\"},\"attributes\":{\"plan\":\"pro\",\"favourite_spice\":\"smoked paprika\",\"orders\":3},\"consent\":{\"email\":true,\"statement\":{\"basis\":\"opted_in\",\"evidence\":\"Checkout opt-in on shop.example.com\"}}}'\n  With topic choices:\n    $ kirora contacts identify -d '{\"externalId\":\"customer-4821\",\"topics\":{\"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f\":{\"email\":true,\"push\":false}}}'\n  By email address only:\n    $ kirora contacts identify -d '{\"email\":\"amaka@example.com\",\"attributes\":{\"orders\":3}}'\n\nAPI reference: https://kirora.io/docs/api/reference/identifyContact\n"
+        "help": "\nBody fields only --data can carry (* required):\n  dates       object\n  attributes  object\n              Custom attributes, merged key by key; `null` removes one.\n  consent     { email, push, statement }\n  topics      object\n              Topic choices keyed by topic id, at most 50, as `PUT /v1/contacts/{id}/topics/{topicId}` sets them: `{ \"subscribed\": true }` for every channel, or `{ \"channels\": { \"email\": … } }` per channel.\n\nExamples:\n  By your own id, with consent:\n    $ kirora contacts identify -d '{\"externalId\":\"customer-4821\",\"email\":\"amaka@example.com\",\"firstName\":\"Amaka\",\"lastName\":\"Obi\",\"phone\":\"+447700900123\",\"timezone\":\"Europe/London\",\"dates\":{\"birthday\":\"1992-03-14\"},\"attributes\":{\"plan\":\"pro\",\"favourite_spice\":\"smoked paprika\",\"orders\":3},\"consent\":{\"email\":true,\"statement\":{\"basis\":\"opted_in\",\"evidence\":\"Checkout opt-in on shop.example.com\"}}}'\n  With topic choices:\n    $ kirora contacts identify -d '{\"externalId\":\"customer-4821\",\"topics\":{\"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f\":{\"channels\":{\"email\":true,\"push\":false}}}}'\n  By email address only:\n    $ kirora contacts identify -d '{\"email\":\"amaka@example.com\",\"attributes\":{\"orders\":3}}'\n\nAPI reference: https://kirora.io/docs/api/reference/identifyContact\n"
       },
       {
         "action": "identify-batch",
@@ -1215,7 +1215,7 @@
         "query": [],
         "body": [],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  contacts*  list of one of { externalId* } | { email* } | { phone* }\n\nExamples:\n  One contact updated, two refused, each in its own result:\n    $ kirora contacts identify-batch -d '{\"contacts\":[{\"externalId\":\"customer-4821\",\"email\":\"amaka@example.com\",\"firstName\":\"Amaka\",\"topics\":{\"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f\":true}},{\"externalId\":\"customer-9999\",\"email\":\"amaka@example.com\"},{\"externalId\":\"customer-5310\",\"email\":\"tunde@example.com\",\"consent\":{\"email\":true}}]}'\n\nAPI reference: https://kirora.io/docs/api/reference/identifyContactsBatch\n"
+        "help": "\nBody fields only --data can carry (* required):\n  contacts*  list of one of { externalId* } | { email* } | { phone* }\n\nExamples:\n  One contact updated, two refused, each in its own result:\n    $ kirora contacts identify-batch -d '{\"contacts\":[{\"externalId\":\"customer-4821\",\"email\":\"amaka@example.com\",\"firstName\":\"Amaka\",\"topics\":{\"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f\":{\"subscribed\":true}}},{\"externalId\":\"customer-9999\",\"email\":\"amaka@example.com\"},{\"externalId\":\"customer-5310\",\"email\":\"tunde@example.com\",\"consent\":{\"email\":true}}]}'\n\nAPI reference: https://kirora.io/docs/api/reference/identifyContactsBatch\n"
       },
       {
         "action": "installations delete",
@@ -1772,8 +1772,15 @@
             "alias": "idType"
           }
         ],
-        "body": [],
-        "help": "\nBody fields only --data can carry (* required):\n  subscribed*  one of true/false | object\n  statement    { basis*, evidence*, consentedAt, wording }\n\nExamples:\n  Join by email, not by push:\n    $ kirora contacts topics set <contact-id> <topic-id> -d '{\"subscribed\":{\"email\":true,\"push\":false},\"statement\":{\"basis\":\"opted_in\",\"evidence\":\"Preference centre\"}}'\n  Leave on every channel:\n    $ kirora contacts topics set <contact-id> <topic-id> -d '{\"subscribed\":false}'\n\nAPI reference: https://kirora.io/docs/api/reference/setContactTopic\n"
+        "body": [
+          {
+            "name": "subscribed",
+            "flag": "subscribed",
+            "kind": "boolean",
+            "description": "Join (true) or leave (false) the topic on every channel; it clears each channel's own choice."
+          }
+        ],
+        "help": "\nBody fields only --data can carry (* required):\n  channels   object\n             One channel's choice each, applied after `subscribed`; a channel left out keeps its choice.\n  statement  { basis*, evidence*, consentedAt, wording }\n\nExamples:\n  Join by email, not by push:\n    $ kirora contacts topics set <contact-id> <topic-id> -d '{\"channels\":{\"email\":true,\"push\":false},\"statement\":{\"basis\":\"opted_in\",\"evidence\":\"Preference centre\"}}'\n  Leave on every channel:\n    $ kirora contacts topics set <contact-id> <topic-id> -d '{\"subscribed\":false}'\n\nAPI reference: https://kirora.io/docs/api/reference/setContactTopic\n"
       },
       {
         "action": "update",
@@ -1933,7 +1940,7 @@
           }
         ],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  where              list of { property*, operator*, value* }\n                     Property conditions the event must meet, up to 5; with several names, each of them must meet them.\n  attributionWindow  { value*, unit* }\n\nExamples:\n  Count orders after the journey's messages as conversions, with revenue:\n    $ kirora conversion-goals create -d '{\"journeyId\":\"0192f3a4-3d5e-7a7f-8c43-6b8c9d0e1f2a\",\"eventName\":\"Order Completed\",\"valueProperty\":\"total\",\"currency\":\"USD\"}'\n  Count only contacts' first orders of $50 or more:\n    $ kirora conversion-goals create -d '{\"journeyId\":\"0192f3a4-3d5e-7a7f-8c43-6b8c9d0e1f2a\",\"eventName\":\"Order Completed\",\"where\":[{\"property\":\"total\",\"operator\":\"gte\",\"value\":50}],\"occurrence\":\"first\",\"valueProperty\":\"total\",\"currency\":\"USD\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/createConversionGoal\n"
+        "help": "\nBody fields only --data can carry (* required):\n  where              list of { property*, operator*, value* }\n                     Property conditions the event must meet, up to 5; with several names, each of them must meet them.\n  attributionWindow  { value*, unit* }\n\nExamples:\n  Count orders after the journey's messages as conversions, with revenue:\n    $ kirora conversion-goals create -d '{\"journeyId\":\"0192f3a4-3d5e-7a7f-8c43-6b8c9d0e1f2a\",\"eventName\":\"Order Completed\",\"valueProperty\":\"total\",\"currency\":\"USD\"}'\n  Count only contacts' first orders of $50 or more:\n    $ kirora conversion-goals create -d '{\"journeyId\":\"0192f3a4-3d5e-7a7f-8c43-6b8c9d0e1f2a\",\"eventName\":\"Order Completed\",\"where\":[{\"property\":\"total\",\"operator\":\"gte\",\"value\":\"50\"}],\"occurrence\":\"first\",\"valueProperty\":\"total\",\"currency\":\"USD\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/createConversionGoal\n"
       },
       {
         "action": "delete",
@@ -2535,10 +2542,18 @@
             "kind": "boolean",
             "description": "Ask submitters to confirm by email before they are subscribed.",
             "alias": "doubleOptIn"
+          },
+          {
+            "name": "notifyUserIds",
+            "flag": "notify-user-ids",
+            "kind": "list",
+            "placeholder": "<ids...>",
+            "description": "Users of this workspace to tell about each submission, in the bell and by email (each can turn the email off). Each must be a user here.",
+            "alias": "notifyUserIds"
           }
         ],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  share         { title, description, imageUrl }\n                How the form's link previews in chat and social apps.\n  fields*       list of { key*, type*, label*, placeholder, required, options }\n                The fields, top to bottom.\n  hiddenFields  object\n                Values saved on each submitter with no field shown, each a contact attribute: fixed (`\"spring\"`), or taken from the link (`{ \"fromParam\": \"utm_campaign\" }`).\n  theme         { mode, accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily, borderRadius, buttonLabel, inputs, button, layout }\n  display       one of { mode*: \"inline\" } | { mode*: \"popup\", delay, scrollPercent, exitIntent, urlMatch, hideFor, hideAfterSubmit }\n  captcha       one of { mode*: \"kirora\" } | { mode*: \"own\", siteKey*, secretKey }\n                CAPTCHA for submissions: `{ mode: \"kirora\" }` (the default on a new form), `{ mode: \"own\", siteKey, secretKey }` for your Cloudflare Turnstile widget, or `null` for none.\n  consent*      { required*: true, label* }\n                The consent box every submitter must tick.\n  success       one of { type*: \"message\", message* } | { type*: \"redirect\", redirectUrl* }\n                What happens after a submission.\n\nExamples:\n  A newsletter signup with double opt-in:\n    $ kirora forms create -d '{\"name\":\"Newsletter signup\",\"heading\":\"Join the Acme Shop newsletter\",\"intro\":\"New arrivals and offers, once a week.\",\"location\":\"website-footer\",\"slug\":\"acme-newsletter\",\"share\":{\"title\":\"Get the Acme Shop newsletter\"},\"hiddenFields\":{\"signup_campaign\":{\"fromParam\":\"utm_campaign\"}},\"listId\":\"0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e\",\"fields\":[{\"key\":\"email\",\"type\":\"email\",\"label\":\"Email address\",\"placeholder\":\"you@example.com\",\"required\":true},{\"key\":\"firstName\",\"type\":\"text\",\"label\":\"First name\",\"required\":false}],\"allowedOrigins\":[\"https://acme-shop.com\"],\"doubleOptIn\":true,\"theme\":{\"accentColor\":\"#b4461f\",\"fontFamily\":\"sans\",\"buttonLabel\":\"Subscribe\"},\"consent\":{\"required\":true,\"label\":\"I agree to receive emails from Acme Shop and can unsubscribe at any time.\"},\"success\":{\"type\":\"message\",\"message\":\"Thanks. Check your inbox to confirm.\"}}'\n\nAPI reference: https://kirora.io/docs/api/reference/createForm\n"
+        "help": "\nBody fields only --data can carry (* required):\n  share         { title, description, imageUrl }\n                How the form's link previews in chat and social apps.\n  fields*       list of { key*, type*, label*, placeholder, required, options }\n                The fields, top to bottom.\n  hiddenFields  object\n                Values saved on each submitter with no field shown, each a contact attribute: fixed (`{ \"source\": \"fixed\", \"value\": \"spring\" }`), or taken from the link (`{ \"source\": \"link\", \"param\": \"utm_campaign\" }`).\n  theme         { mode, accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily, borderRadius, buttonLabel, inputs, button, layout }\n  display       one of { mode*: \"inline\" } | { mode*: \"popup\", delay, scrollPercent, exitIntent, urlMatch, hideFor, hideAfterSubmit }\n  captcha       one of { mode*: \"kirora\" } | { mode*: \"own\", siteKey*, secretKey }\n                CAPTCHA for submissions: `{ mode: \"kirora\" }` (the default on a new form), `{ mode: \"own\", siteKey, secretKey }` for your Cloudflare Turnstile widget, or `null` for none.\n  consent*      { required*: true, label* }\n                The consent box every submitter must tick.\n  success       one of { type*: \"message\", message* } | { type*: \"redirect\", redirectUrl* }\n                What happens after a submission.\n\nExamples:\n  A newsletter signup with double opt-in:\n    $ kirora forms create -d '{\"name\":\"Newsletter signup\",\"heading\":\"Join the Acme Shop newsletter\",\"intro\":\"New arrivals and offers, once a week.\",\"location\":\"website-footer\",\"slug\":\"acme-newsletter\",\"share\":{\"title\":\"Get the Acme Shop newsletter\"},\"hiddenFields\":{\"signup_campaign\":{\"source\":\"link\",\"param\":\"utm_campaign\"}},\"listId\":\"0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e\",\"fields\":[{\"key\":\"email\",\"type\":\"email\",\"label\":\"Email address\",\"placeholder\":\"you@example.com\",\"required\":true},{\"key\":\"firstName\",\"type\":\"text\",\"label\":\"First name\",\"required\":false}],\"allowedOrigins\":[\"https://acme-shop.com\"],\"doubleOptIn\":true,\"notifyUserIds\":[],\"theme\":{\"accentColor\":\"#b4461f\",\"fontFamily\":\"sans\",\"buttonLabel\":\"Subscribe\"},\"consent\":{\"required\":true,\"label\":\"I agree to receive emails from Acme Shop and can unsubscribe at any time.\"},\"success\":{\"type\":\"message\",\"message\":\"Thanks. Check your inbox to confirm.\"}}'\n\nAPI reference: https://kirora.io/docs/api/reference/createForm\n"
       },
       {
         "action": "delete",
@@ -2745,7 +2760,7 @@
         "query": [],
         "body": [],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  fields*  object\n           Answers by field `key`.\n\nExamples:\n  Sign up a person your system collected; they confirm by email:\n    $ kirora forms submissions submit <id> -d '{\"fields\":{\"email\":\"amaka@example.com\",\"firstName\":\"Amaka\"}}'\n\nAPI reference: https://kirora.io/docs/api/reference/submitForm\n"
+        "help": "\nBody fields only --data can carry (* required):\n  fields*  object\n           Answers by field `key`.\n  choices  object\n           Each checkbox field's ticked option values, by field `key`.\n\nExamples:\n  Sign up a person your system collected; they confirm by email:\n    $ kirora forms submissions submit <id> -d '{\"fields\":{\"email\":\"amaka@example.com\",\"firstName\":\"Amaka\"}}'\n\nAPI reference: https://kirora.io/docs/api/reference/submitForm\n"
       },
       {
         "action": "unarchive",
@@ -2753,7 +2768,7 @@
         "method": "POST",
         "path": "/v1/forms/{id}/unarchive",
         "summary": "Unarchive a form",
-        "details": "Returns an archived form to the list. A form that was published is live again at once, so an agent key cannot unarchive a published form (403 `AGENT_KEY_REFUSED`).",
+        "details": "Returns an archived form to the list. A form that was published is live again at once, so an agent key cannot unarchive a published form (403 `AGENT_KEY_REFUSED`). One whose list, or a list its `lists` field offers, was deleted while it was archived comes back as a `draft`: choose its lists and publish it again.",
         "scope": "forms:write",
         "pathParams": [
           {
@@ -2886,6 +2901,14 @@
             "kind": "boolean",
             "description": "Ask submitters to confirm by email before they are subscribed.",
             "alias": "doubleOptIn"
+          },
+          {
+            "name": "notifyUserIds",
+            "flag": "notify-user-ids",
+            "kind": "list",
+            "placeholder": "<ids...>",
+            "description": "Users of this workspace to tell about each submission, in the bell and by email (each can turn the email off). Each must be a user here.",
+            "alias": "notifyUserIds"
           }
         ],
         "help": "\nBody fields only --data can carry (* required):\n  share         { title, description, imageUrl }\n                How the form's link previews in chat and social apps.\n  fields        list of { key*, type*, label*, placeholder, required, options }\n                The fields, top to bottom.\n  hiddenFields  object\n                Values saved on each submitter with no field shown: fixed, or taken from the link.\n  theme         { mode, accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily, borderRadius, buttonLabel, inputs, button, layout }\n  display       one of { mode*: \"inline\" } | { mode*: \"popup\", delay, scrollPercent, exitIntent, urlMatch, hideFor, hideAfterSubmit }\n  captcha       one of { mode*: \"kirora\" } | { mode*: \"own\", siteKey*, secretKey }\n                CAPTCHA for submissions: `{ mode: \"kirora\" }` (the default on a new form), `{ mode: \"own\", siteKey, secretKey }` for your Cloudflare Turnstile widget, or `null` for none.\n  consent       { required*: true, label* }\n                The consent box every submitter must tick.\n  success       one of { type*: \"message\", message* } | { type*: \"redirect\", redirectUrl* }\n                What happens after a submission.\n\nExamples:\n  Change the heading visitors see:\n    $ kirora forms update <id> -d '{\"heading\":\"Get 10% off your first order\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/updateForm\n"
@@ -2922,6 +2945,23 @@
         ],
         "idempotencyKey": "optional",
         "help": "\nExamples:\n  A list journey also enrolls the people already on the list:\n    $ kirora journeys activate <id> -d '{\"enrollCurrentMembers\":true}'\n\nAPI reference: https://kirora.io/docs/api/reference/activateJourney\n"
+      },
+      {
+        "action": "activation-check",
+        "operationId": "getJourneyActivationCheck",
+        "method": "GET",
+        "path": "/v1/journeys/{id}/activation-check",
+        "summary": "Check a journey before activating",
+        "details": "Lists everything activating now would refuse, all at once and without activating: unfinished send steps, a list, segment, form, topic or webhook a step, the trigger or an exit names that is gone or off, a conversion goal exit without a goal, and for each finished send step an unverified sender or a sending domain without the DMARC record marketing email needs, the workspace's missing postal address or a push app not ready. Each issue gives the field to fix, the error code `activateJourney` would answer with for it and, on a step, the step's id. Empty `issues` means these checks pass; activation can still refuse for the plan's active journey limit or, for a journey an agent authored or edited, a person's confirmation. An ended journey has one issue on `status`; a workspace whose sending is stopped (suspended, or its deletion pending) has one on `workspace`.",
+        "scope": "journeys:read",
+        "pathParams": [
+          {
+            "name": "id",
+            "label": "id"
+          }
+        ],
+        "query": [],
+        "help": "\nAPI reference: https://kirora.io/docs/api/reference/getJourneyActivationCheck\n"
       },
       {
         "action": "create",
@@ -3361,7 +3401,7 @@
         "method": "DELETE",
         "path": "/v1/lists/{id}",
         "summary": "Delete a list",
-        "details": "Deletes the list and its membership records. The contacts themselves are not deleted. Refused with one 409 `IN_USE` naming everything that blocks it, in the shape of `getListUsage`: campaigns not yet sent or cancelled (A/B tests included) whose audience, rules or exclusions name it (`details.campaigns`), published forms that add submitters to it or name it in a field (`details.forms`): without the list a form refuses every submission. Also active or paused journeys (`details.journeys`) and segments whose rules name it (`details.segments`): a \"not in this list\" rule must not outlive the list. Change or end those first. A sent or cancelled campaign does not block it: the campaign keeps its recipients and messages, the list leaves its `listIds` (`null` once none is left) and `audienceName` keeps the names of the lists it went to.",
+        "details": "Deletes the list and its membership records. The contacts themselves are not deleted. Refused with one 409 `IN_USE` naming everything that blocks it, in the shape of `getListUsage`: campaigns not yet sent or cancelled (A/B tests included) whose audience, rules or exclusions name it, or whose content has a block shown only to, or hidden from, its members (`details.campaigns`), published forms not archived that add submitters to it or name it in a field (`details.forms`): without the list a form refuses every submission. Also goals not retired (`details.goals`), active or paused journeys (`details.journeys`), segments whose rules name it (`details.segments`), and templates (the draft or the published version) and shared blocks with such a block (`details.templates`, `details.sharedBlocks`): a \"not in this list\" rule must not outlive the list. Change or end those first. A sent or cancelled campaign does not block it: the campaign keeps its recipients and messages, the list leaves its `listIds` (`null` once none is left) and `audienceName` keeps the names of the lists it went to.",
         "scope": "lists:write",
         "pathParams": [
           {
@@ -3462,7 +3502,7 @@
         "method": "GET",
         "path": "/v1/lists/{id}/usage",
         "summary": "Retrieve a list's usage",
-        "details": "Returns what names the list: campaigns whose audience, rules or exclusions name it, forms that add people to it, journeys whose rules or steps name it, and segments whose rules name it, up to 50 of each (`hasMore` when a kind holds more). Deleting the list is refused (409 `IN_USE`) while any of them is a campaign not yet sent or cancelled (`draft`, `scheduled`, `testing` for an A/B test, or `sending`), an `active` or `paused` journey, or a segment. Forms, sent or cancelled campaigns and draft or ended journeys do not block it.",
+        "details": "Returns what names the list: campaigns whose audience, rules or exclusions name it, or whose content has a block shown only to, or hidden from, its members, forms that add people to it, goals whose rules name it, journeys whose rules or steps name it, segments whose rules name it, and templates (the draft or the published version) and shared blocks with such a block, up to 50 of each (`hasMore` when a kind holds more). Deleting the list is refused (409 `IN_USE`) while any of them is a campaign not yet sent or cancelled (`draft`, `scheduled`, `testing` for an A/B test, or `sending`), a published form not archived, a goal not retired, an `active` or `paused` journey, a segment, a template or a shared block. Draft or archived forms, sent or cancelled campaigns, retired goals and draft or ended journeys do not block it.",
         "scope": "lists:read",
         "pathParams": [
           {
@@ -3518,7 +3558,7 @@
         "method": "GET",
         "path": "/v1/messages/{id}/deliveries",
         "summary": "List a push message's deliveries",
-        "details": "Lists what each device reported for one push message: any message whose `channel` is `push`, from a campaign, a journey or a transactional send. A push reaches every ready installation of the contact, so a message has one delivery per device. `accepted`: Apple, Google or the browser's push service took it, which is not proof the device showed it. `invalid`: the device is gone and its installation was retired. `rejected`: refused, often the app's key or a payload the provider would not take. `retryable`: will be tried again. `unknown`: the provider may have taken it, so it is not resent. `skipped`: not attempted, as when the app's key was refused for another device of the same app. `pending` and `started` are still in flight. A message that is not a push returns 404.",
+        "details": "Lists what each device reported for one push message: any message whose `channel` is `push`, from a campaign, a journey or a transactional send. A push reaches every ready installation of the contact, so a message has one delivery per device. `accepted`: Apple, Google or the browser's push service took it, which is not proof the device showed it. `invalid`: the device is gone and its installation was retired. `rejected`: refused, often the app's key or a payload the provider would not take. `retryable`: will be tried again. `unknown`: the provider may have taken it, so it is not resent. `skipped`: not attempted, as when the app's key was refused for another device of the same app. `pending` and `started` are still in flight. Any other message returns 404 `NOT_FOUND`: a missing one says `Message not found`, and one on another channel names it in `details.channel` (an email's delivery events are on the message itself).",
         "scope": "messages:read",
         "pathParams": [
           {
@@ -4022,7 +4062,7 @@
             "alias": "withinDays"
           }
         ],
-        "help": "\nBody fields only --data can carry (* required):\n  steps*  list of { eventName*, where }\n          The events, in order.\n\nExamples:\n  Cart to order:\n    $ kirora reports funnel -d '{\"from\":\"2026-09-01\",\"to\":\"2026-10-01\",\"steps\":[{\"eventName\":\"Cart Abandoned\"},{\"eventName\":\"Order Completed\",\"where\":[{\"property\":\"total\",\"operator\":\"gte\",\"value\":20}]}],\"withinDays\":7}'\n\nAPI reference: https://kirora.io/docs/api/reference/getFunnelReport\n"
+        "help": "\nBody fields only --data can carry (* required):\n  steps*  list of { eventName*, where }\n          The events, in order.\n\nExamples:\n  Cart to order:\n    $ kirora reports funnel -d '{\"from\":\"2026-09-01\",\"to\":\"2026-10-01\",\"steps\":[{\"eventName\":\"Cart Abandoned\"},{\"eventName\":\"Order Completed\",\"where\":[{\"property\":\"total\",\"operator\":\"gte\",\"value\":\"20\"}]}],\"withinDays\":7}'\n\nAPI reference: https://kirora.io/docs/api/reference/getFunnelReport\n"
       },
       {
         "action": "overview",
@@ -4167,7 +4207,7 @@
           }
         ],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  rules*  one of { all* } | { any* }\n\nExamples:\n  Newsletter members with no order in 90 days:\n    $ kirora segments create -d '{\"name\":\"Lapsed customers\",\"description\":\"Newsletter readers who have not ordered in 90 days, for the win-back offer\",\"rules\":{\"all\":[{\"type\":\"event\",\"name\":\"Order Completed\",\"count\":{\"operator\":\"equals\",\"value\":0},\"withinDays\":90},{\"type\":\"list\",\"listIds\":[\"0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e\"],\"member\":true}]},\"tags\":[\"Win-back\"]}'\n  Nested rules: Nigerian pro customers, or anyone who clicked:\n    $ kirora segments create -d '{\"name\":\"Engaged or pro\",\"rules\":{\"any\":[{\"all\":[{\"type\":\"contact\",\"field\":\"phone\",\"operator\":\"exists\"},{\"type\":\"attribute\",\"field\":\"attributes.plan\",\"operator\":\"equals\",\"value\":\"pro\"}]},{\"type\":\"activity\",\"activity\":\"clicked\",\"withinDays\":30}]}}'\n\nAPI reference: https://kirora.io/docs/api/reference/createSegment\n"
+        "help": "\nBody fields only --data can carry (* required):\n  rules*  one of { all* } | { any* }\n\nExamples:\n  Newsletter members with no order in 90 days:\n    $ kirora segments create -d '{\"name\":\"Lapsed customers\",\"description\":\"Newsletter readers who have not ordered in 90 days, for the win-back offer\",\"rules\":{\"all\":[{\"type\":\"event\",\"name\":\"Order Completed\",\"count\":{\"operator\":\"equals\",\"value\":0},\"withinDays\":90},{\"type\":\"list\",\"listIds\":[\"0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e\"],\"member\":true}]},\"tags\":[\"Win-back\"]}'\n  Nested rules: premium customers with a phone, or anyone who clicked:\n    $ kirora segments create -d '{\"name\":\"Engaged or premium\",\"rules\":{\"any\":[{\"all\":[{\"type\":\"contact\",\"field\":\"phone\",\"operator\":\"exists\"},{\"type\":\"attribute\",\"field\":\"attributes.plan\",\"operator\":\"equals\",\"value\":\"premium\"}]},{\"type\":\"activity\",\"activity\":\"clicked\",\"withinDays\":30}]}}'\n\nAPI reference: https://kirora.io/docs/api/reference/createSegment\n"
       },
       {
         "action": "delete",
@@ -4348,7 +4388,7 @@
         "method": "PATCH",
         "path": "/v1/segments/{id}",
         "summary": "Update a segment",
-        "details": "Replaces the segment's rules, renames it or changes its description. Changing rules changes who the segment matches from the next evaluation onward; campaigns already sent are unaffected. When an agent key changes the rules, everything that uses the segment, directly or through segments that name it, waits for a person again: scheduled campaigns are unscheduled, active journeys are paused, and each needs a human confirmation before it sends.",
+        "details": "Replaces the segment's rules, renames it or changes its description. Changing rules changes who the segment matches from the next evaluation onward; campaigns already sent are unaffected. When an agent key changes the rules, everything that uses the segment, directly or through segments that name it, waits for a person again: scheduled campaigns are unscheduled, active journeys are paused, and each needs a human confirmation before it sends. While a campaign that uses it is still sending or deciding an A/B test, an agent key cannot change the rules (403 `AGENT_KEY_REFUSED`).",
         "scope": "segments:write",
         "pathParams": [
           {
@@ -4388,7 +4428,7 @@
         "method": "GET",
         "path": "/v1/segments/{id}/usage",
         "summary": "Retrieve a segment's usage",
-        "details": "Returns what uses the segment: campaigns whose audience is this segment or whose rules or exclusions name it, journeys whose rules or steps name it, and other segments whose rules name it, up to 50 of each (`hasMore` when a kind holds more). Deleting the segment is refused (409 `IN_USE`) while any of them is a campaign not yet sent or cancelled (`draft`, `scheduled`, `testing` for an A/B test, or `sending`), an `active` or `paused` journey, or another segment.",
+        "details": "Returns what uses the segment: campaigns whose audience is this segment, whose rules or exclusions name it, or whose content shows a block only to it (in any A/B version), journeys whose rules or steps name it, and other segments whose rules name it, up to 50 of each (`hasMore` when a kind holds more). Deleting the segment is refused (409 `IN_USE`) while any of them is a campaign not yet sent or cancelled (`draft`, `scheduled`, `testing` for an A/B test, or `sending`), an `active` or `paused` journey, or another segment.",
         "scope": "segments:read",
         "pathParams": [
           {
@@ -4566,7 +4606,7 @@
           }
         ],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  blocks*  list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links*, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n           The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n\nExamples:\n  A footer note to reuse across emails:\n    $ kirora shared-blocks create -d '{\"name\":\"Footer note\",\"blocks\":[{\"id\":\"footer-note\",\"type\":\"text\",\"text\":\"Acme Shop, 12 Market Street, Lagos. Questions? Reply to this email.\",\"align\":\"center\"}]}'\n\nAPI reference: https://kirora.io/docs/api/reference/createSharedBlock\n"
+        "help": "\nBody fields only --data can carry (* required):\n  blocks*  list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n           The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n\nExamples:\n  A footer note to reuse across emails:\n    $ kirora shared-blocks create -d '{\"name\":\"Footer note\",\"blocks\":[{\"id\":\"footer-note\",\"type\":\"text\",\"text\":\"Juniper Kitchen, 12 Market Street, London. Questions? Reply to this email.\",\"align\":\"center\"}]}'\n\nAPI reference: https://kirora.io/docs/api/reference/createSharedBlock\n"
       },
       {
         "action": "delete",
@@ -4574,7 +4614,7 @@
         "method": "DELETE",
         "path": "/v1/shared-blocks/{id}",
         "summary": "Delete a shared block",
-        "details": "Deletes a shared block. Refused with 409 `IN_USE`, its `details` the usage, while a template, an unsent campaign or a journey not ended places it.",
+        "details": "Deletes a shared block. Refused with 409 `IN_USE`, its `details` the usage, while a template, an unsent campaign or a journey not ended places it, or the brand kit names it as its default header or footer.",
         "scope": "templates:write",
         "pathParams": [
           {
@@ -4653,7 +4693,7 @@
             "placeholder": "<value>"
           }
         ],
-        "help": "\nBody fields only --data can carry (* required):\n  blocks  list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links*, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n          The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n\nExamples:\n  Rename the block:\n    $ kirora shared-blocks update <id> -d '{\"name\":\"Store footer\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/updateSharedBlock\n"
+        "help": "\nBody fields only --data can carry (* required):\n  blocks  list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n          The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n\nExamples:\n  Rename the block:\n    $ kirora shared-blocks update <id> -d '{\"name\":\"Store footer\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/updateSharedBlock\n"
       },
       {
         "action": "usage",
@@ -4943,57 +4983,12 @@
         "method": "POST",
         "path": "/v1/templates",
         "summary": "Create an email template",
-        "details": "Creates a reusable email design and publishes it as version 1, so a transactional send can use it at once by its `id` or `alias`. An agent key's template stays a draft until a person publishes it.",
+        "details": "Creates a reusable email and publishes it as version 1, so a transactional send can use it at once by its `id` or `alias`. An agent key's template stays a draft until a person publishes it.",
         "scope": "templates:write",
         "query": [],
-        "body": [
-          {
-            "name": "name",
-            "flag": "name",
-            "kind": "string",
-            "placeholder": "<value>",
-            "required": true
-          },
-          {
-            "name": "schemaVersion",
-            "flag": "schema-version",
-            "kind": "number",
-            "placeholder": "<number>",
-            "description": "The block format version. Defaults to the current one.",
-            "alias": "schemaVersion"
-          },
-          {
-            "name": "language",
-            "flag": "language",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "The language the email is written in, as a BCP 47 tag (\"en\", \"fr-BE\", \"ar\"). It sets the HTML `lang` and the reading direction: Arabic, Hebrew, Persian, Urdu and other right-to-left languages render right to left. Defaults to \"en\"."
-          },
-          {
-            "name": "plainTextOverride",
-            "flag": "plain-text-override",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "Plain text sent instead of the version generated from the blocks; `null` clears it.",
-            "alias": "plainTextOverride"
-          },
-          {
-            "name": "alias",
-            "flag": "alias",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "Unique in the workspace; a transactional send may name the template by it in `email.template`. Null clears it."
-          },
-          {
-            "name": "tags",
-            "flag": "tags",
-            "kind": "list",
-            "placeholder": "<values...>",
-            "description": "Tag names, up to 20, matched without case; a tag the workspace lacks is created. On update, replaces the tags whole: `[]` removes them all."
-          }
-        ],
+        "body": [],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  blocks*                list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links*, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n                         The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n  theme                  { bodyFontFamily, headingFontFamily, cardBackgroundColor, canvasBackgroundColor, textColor, accentColor, linkColor, cardWidth, cardBorderRadius, buttonBorderRadius, buttonStyle }\n  transactionalDefaults  { subject, previewText, from, replyTo }\n                         The subject, preview text and sender a transactional send of this template uses unless the send gives its own; campaigns and journeys set their own.\n\nExamples:\n  A welcome email, created with an integration key: live as version 1:\n    $ kirora templates create -d '{\"name\":\"Welcome email\",\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"transactionalDefaults\":{\"subject\":\"Welcome to Acme Shop\",\"previewText\":\"Your first order ships free\",\"from\":\"Acme Shop <hello@mail.acme-shop.com>\",\"replyTo\":\"support@acme-shop.com\"},\"alias\":\"welcome\",\"tags\":[\"Onboarding\"]}'\n  The same email, created with an agent key: a draft until a person publishes it:\n    $ kirora templates create -d '{\"name\":\"Welcome email\",\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"transactionalDefaults\":{\"subject\":\"Welcome to Acme Shop\",\"previewText\":\"Your first order ships free\",\"from\":\"Acme Shop <hello@mail.acme-shop.com>\",\"replyTo\":\"support@acme-shop.com\"},\"alias\":\"welcome\",\"tags\":[\"Onboarding\"]}'\n\nAPI reference: https://kirora.io/docs/api/reference/createTemplate\n"
+        "help": "\nThe body (--data) is one of:\n  { kind: \"design\", schemaVersion, blocks*, theme, language, name*, plainTextOverride, transactionalDefaults, alias, tags }\n  { kind*: \"html\", html*, name*, plainTextOverride, transactionalDefaults, alias, tags }\n\nExamples:\n  A monthly newsletter brought as HTML, kept as code:\n    $ kirora templates create -d '{\"kind\":\"html\",\"name\":\"Monthly newsletter\",\"html\":\"<!DOCTYPE html><html lang=\\\"en\\\"><head><meta charset=\\\"utf-8\\\"><style>p{font-family:Arial,sans-serif}</style></head><body><h1>The Acme Shop monthly</h1><p>Hi {{ contact.firstName | default: \\\"there\\\" }}, here is what is new.</p><p><a href=\\\"{{unsubscribe_url}}\\\">Unsubscribe</a></p></body></html>\"}'\n  A welcome email, created with an integration key: live as version 1:\n    $ kirora templates create -d '{\"name\":\"Welcome email\",\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"transactionalDefaults\":{\"subject\":\"Welcome to Acme Shop\",\"previewText\":\"Your first order ships free\",\"from\":\"Acme Shop <hello@mail.acme-shop.com>\",\"replyTo\":\"support@acme-shop.com\"},\"alias\":\"welcome\",\"tags\":[\"Onboarding\"]}'\n  The same email, created with an agent key: a draft until a person publishes it:\n    $ kirora templates create -d '{\"name\":\"Welcome email\",\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"transactionalDefaults\":{\"subject\":\"Welcome to Acme Shop\",\"previewText\":\"Your first order ships free\",\"from\":\"Acme Shop <hello@mail.acme-shop.com>\",\"replyTo\":\"support@acme-shop.com\"},\"alias\":\"welcome\",\"tags\":[\"Onboarding\"]}'\n\nAPI reference: https://kirora.io/docs/api/reference/createTemplate\n"
       },
       {
         "action": "delete",
@@ -5019,7 +5014,7 @@
         "method": "POST",
         "path": "/v1/templates/{id}/duplicate",
         "summary": "Duplicate a template",
-        "details": "Copies a template's draft (its blocks, theme and `transactionalDefaults`, not its alias) into a new template, published as version 1, as on create. A copy made with an agent key, or of an agent's template, stays a draft until a person publishes it.",
+        "details": "Copies a template's draft (its blocks and theme or its HTML, and `transactionalDefaults`, not its alias) into a new template, published as version 1, as on create. A copy made with an agent key, or of an agent's template, stays a draft until a person publishes it.",
         "scope": "templates:write",
         "pathParams": [
           {
@@ -5057,7 +5052,7 @@
         "method": "GET",
         "path": "/v1/templates/{id}",
         "summary": "Retrieve a template",
-        "details": "Returns one template including its full block tree and theme.",
+        "details": "Returns one template including its full content: a design's block tree and theme, or an HTML template's `html`.",
         "scope": "templates:read",
         "pathParams": [
           {
@@ -5074,7 +5069,7 @@
         "method": "GET",
         "path": "/v1/templates",
         "summary": "List templates",
-        "details": "Returns templates in this workspace. The list form omits the block tree; retrieve a template individually to get its full content. Results are cursor-paginated: pass `meta.pagination.nextCursor` back as `cursor` until it comes back `null`. The cursor is opaque — do not construct or parse one.",
+        "details": "Returns templates in this workspace, each with its `kind`. The list form omits the block tree and HTML; retrieve a template individually to get its full content. Results are cursor-paginated: pass `meta.pagination.nextCursor` back as `cursor` until it comes back `null`. The cursor is opaque — do not construct or parse one.",
         "scope": "templates:read",
         "query": [
           {
@@ -5133,7 +5128,7 @@
         "method": "POST",
         "path": "/v1/templates/{id}/render",
         "summary": "Render a saved template",
-        "details": "Renders a saved template to the subject, HTML and plain text a recipient would get, without sending or changing anything. By default it renders the published version, which is what sends use, drawn with the brand and shared blocks it was published with; pass `\"version\": \"draft\"` for the draft as it stands now, or a version number. A template never published is 409 `TEMPLATE_NOT_PUBLISHED` for `published`. Merge tags show their defaults, or pass `contact` to render them as that contact would see them, and `data` for what a send's `data` would carry. `warnings` flags problems that do not stop rendering, such as an oversized message.",
+        "details": "Renders a saved template to the subject, HTML and plain text a recipient would get, without sending or changing anything. By default it renders the published version, which is what sends use, drawn with the brand and shared blocks it was published with; pass `\"draft\": true` for the draft as it stands now, or `\"version\"` for an earlier published version. Rendering the published version of a template never published is 409 `TEMPLATE_NOT_PUBLISHED`. Merge tags show their defaults, or pass `contact` to render them as that contact would see them, and `data` for what a send's `data` would carry. `warnings` flags problems that do not stop rendering, such as an oversized message.",
         "scope": "templates:read",
         "pathParams": [
           {
@@ -5142,51 +5137,45 @@
           }
         ],
         "query": [],
-        "body": [],
-        "help": "\nBody fields only --data can carry (* required):\n  version  one of \"published\" | \"draft\" | number\n           `published` (the default): what sends use, with the brand and shared blocks it was published with.\n  contact  one of { contactId* } | { externalId* } | { email* }\n  data     object\n           Sample data for `{{ event.properties.* }}` tags and repeat lists: what a transactional send's `data` or a journey's event would carry.\n\nExamples:\n  Render what sends use, as one contact would see it:\n    $ kirora templates render <id> -d '{\"version\":\"published\",\"contact\":{\"externalId\":\"customer-881\"}}'\n  Render the draft with merge tags at their defaults:\n    $ kirora templates render <id> -d '{\"version\":\"draft\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/renderTemplate\n"
+        "body": [
+          {
+            "name": "draft",
+            "flag": "draft",
+            "kind": "boolean",
+            "description": "`true`: the template as it is now, in the current brand and shared blocks. Left out, the published version: what sends use, with the brand and shared blocks it was published with."
+          },
+          {
+            "name": "version",
+            "flag": "template-version",
+            "kind": "number",
+            "placeholder": "<number>",
+            "description": "A published version to render instead of the current one."
+          },
+          {
+            "name": "context",
+            "flag": "context",
+            "kind": "string",
+            "placeholder": "<value>",
+            "choices": [
+              "marketing",
+              "transactional"
+            ],
+            "description": "HTML only. `marketing`: the email as a marketing send has it, with the postal address and an unsubscribe link (`{{unsubscribe_url}}`; `#` in a test send) added below when the HTML does not show them. `transactional` (the default): nothing is added, as a transactional send adds nothing, and the HTML is as saving keeps it."
+          }
+        ],
+        "help": "\nBody fields only --data can carry (* required):\n  contact  one of { contactId* } | { externalId* } | { email* }\n  data     object\n           Sample data for `{{ event.properties.* }}` tags and repeat lists: what a transactional send's `data` or a journey's event would carry.\n\nExamples:\n  Render what sends use, as one contact would see it:\n    $ kirora templates render <id> -d '{\"contact\":{\"externalId\":\"customer-881\"}}'\n  Render the draft with merge tags at their defaults:\n    $ kirora templates render <id> -d '{\"draft\":true}'\n\nAPI reference: https://kirora.io/docs/api/reference/renderTemplate\n"
       },
       {
         "action": "render-content",
         "operationId": "renderTemplateContent",
         "method": "POST",
         "path": "/v1/templates/render",
-        "summary": "Render blocks to email HTML",
-        "details": "Renders a block tree and theme sent in the request to the HTML and plain text a recipient would get, without saving anything: the builder preview, plain-text view and HTML export. To render a saved template, use `POST /v1/templates/{id}/render`. Merge tags show their defaults, or pass `contact` to render them as that contact would see them (not from an embed session). `warnings` flags problems that do not stop rendering, such as an oversized message, or `POSTAL_ADDRESS_MISSING` while the workspace has no `postalAddress` for the footer.",
+        "summary": "Render a design or HTML",
+        "details": "Renders a block tree and theme sent in the request, or an email written as HTML (`\"kind\": \"html\"`), to the HTML and plain text a recipient would get, without saving anything: the builder or code editor preview, plain-text view and HTML export. HTML is returned as saving would keep it, with `HTML_REMOVED` listing what saving removes, `UNSUBSCRIBE_LINK_ADDED` when no link goes to `{{unsubscribe_url}}`, `UNUSABLE_ADDRESS` naming empty, `#` or relative link and image addresses, and `PLACEHOLDER_LINK` naming placeholder addresses (example.com and the like), which sending refuses as it does in a design. With `\"context\": \"marketing\"` the HTML shows the postal address and unsubscribe link a marketing send adds when the email lacks them; `\"transactional\"`, the default, adds nothing and returns the HTML as saving keeps it. To render a saved template, use `POST /v1/templates/{id}/render`. Merge tags show their defaults, or pass `contact` to render them as that contact would see them (not from an embed session). `warnings` flags problems that do not stop rendering, such as an oversized message, or `POSTAL_ADDRESS_MISSING` while the workspace has no `postalAddress` for the footer.",
         "scope": "templates:read",
         "query": [],
-        "body": [
-          {
-            "name": "schemaVersion",
-            "flag": "schema-version",
-            "kind": "number",
-            "placeholder": "<number>",
-            "description": "The block format version.",
-            "alias": "schemaVersion"
-          },
-          {
-            "name": "language",
-            "flag": "language",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "The language the email is written in, as a BCP 47 tag (\"en\", \"fr-BE\", \"ar\"). It sets the HTML `lang` and the reading direction: Arabic, Hebrew, Persian, Urdu and other right-to-left languages render right to left. Defaults to \"en\"."
-          },
-          {
-            "name": "plainTextOverride",
-            "flag": "plain-text-override",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "Plain text used instead of the version generated from the blocks.",
-            "alias": "plainTextOverride"
-          },
-          {
-            "name": "subject",
-            "flag": "subject",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "The subject line, returned rendered."
-          }
-        ],
-        "help": "\nBody fields only --data can carry (* required):\n  blocks*  list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links*, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n           The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n  theme    { bodyFontFamily, headingFontFamily, cardBackgroundColor, canvasBackgroundColor, textColor, accentColor, linkColor, cardWidth, cardBorderRadius, buttonBorderRadius, buttonStyle }\n  contact  one of { contactId* } | { externalId* } | { email* }\n  data     object\n           Sample data for `{{ event.properties.* }}` tags and repeat lists: what a transactional send's `data` or a journey's event would carry.\n\nExamples:\n  Render a design for one contact without saving it:\n    $ kirora templates render-content -d '{\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"contact\":{\"contactId\":\"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d\"},\"subject\":\"Welcome to Acme Shop\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/renderTemplateContent\n"
+        "body": [],
+        "help": "\nThe body (--data) is one of:\n  { kind: \"design\", schemaVersion, blocks*, theme, language, plainTextOverride, contact, subject, data }\n  { kind*: \"html\", html*, context, plainTextOverride, contact, subject, data }\n\nExamples:\n  Render a design for one contact without saving it:\n    $ kirora templates render-content -d '{\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"contact\":{\"contactId\":\"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d\"},\"subject\":\"Welcome to Acme Shop\"}'\n  Preview HTML in the code editor: what saving keeps, and what it removes:\n    $ kirora templates render-content -d '{\"kind\":\"html\",\"html\":\"<!DOCTYPE html><html lang=\\\"en\\\"><head><meta charset=\\\"utf-8\\\"><style>p{font-family:Arial,sans-serif}</style></head><body><h1>The Acme Shop monthly</h1><p>Hi {{ contact.firstName | default: \\\"there\\\" }}, here is what is new.</p><p><a href=\\\"{{unsubscribe_url}}\\\">Unsubscribe</a></p><script>track()</script></body></html>\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/renderTemplateContent\n"
       },
       {
         "action": "send-test",
@@ -5194,59 +5183,12 @@
         "method": "POST",
         "path": "/v1/templates/test-send",
         "summary": "Send a test email",
-        "details": "Sends the design in the request to one workspace member who has accepted their invitation; call once per recipient. Pass `contact` to render merge tags as that contact would see them. The test comes from `from`, or the workspace's default sender, on a verified sending domain: there is no shared sender, so a workspace sends tests once its own domain is verified (`SENDING_DOMAIN_UNVERIFIED` before then). Nothing is recorded as a message. An embed session may call this too: a session lets the chosen builders read what they need, render previews, count audiences, upload images and, when `testSendTo` lists addresses, send test emails to those addresses only. It never saves, publishes or sends anything else; your server saves what the builders return. From a session, the test goes only to an address its `testSendTo` names, instead of to a workspace member (400 `VALIDATION_ERROR` for any other).",
+        "details": "Sends the design or HTML in the request to one workspace member who has accepted their invitation; call once per recipient. Pass `contact` to render merge tags as that contact would see them. The test comes from `from`, or the workspace's default sender, on a verified sending domain: there is no shared sender, so a workspace sends tests once its own domain is verified (`SENDING_DOMAIN_UNVERIFIED` before then). Nothing is recorded as a message. An embed session may call this too: a session lets the chosen builders read what they need, render previews, count audiences, upload images and, when `testSendTo` lists addresses, send test emails to those addresses only. It never saves, publishes or sends anything else; your server saves what the builders return. From a session, the test goes only to an address its `testSendTo` names, instead of to a workspace member (400 `VALIDATION_ERROR` for any other).",
         "scope": "templates:write",
         "query": [],
-        "body": [
-          {
-            "name": "schemaVersion",
-            "flag": "schema-version",
-            "kind": "number",
-            "placeholder": "<number>",
-            "description": "The block format version.",
-            "alias": "schemaVersion"
-          },
-          {
-            "name": "language",
-            "flag": "language",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "The language the email is written in, as a BCP 47 tag (\"en\", \"fr-BE\", \"ar\"). It sets the HTML `lang` and the reading direction: Arabic, Hebrew, Persian, Urdu and other right-to-left languages render right to left. Defaults to \"en\"."
-          },
-          {
-            "name": "plainTextOverride",
-            "flag": "plain-text-override",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "Plain text used instead of the version generated from the blocks.",
-            "alias": "plainTextOverride"
-          },
-          {
-            "name": "subject",
-            "flag": "subject",
-            "kind": "string",
-            "placeholder": "<value>",
-            "description": "The subject line.",
-            "required": true
-          },
-          {
-            "name": "from",
-            "flag": "from",
-            "kind": "string",
-            "placeholder": "<email>",
-            "description": "The address the test comes from, on one of the workspace's verified domains; the workspace's default sender when omitted."
-          },
-          {
-            "name": "to",
-            "flag": "to",
-            "kind": "string",
-            "placeholder": "<email>",
-            "description": "Where to send the test: any member of the workspace who has accepted their invitation.",
-            "required": true
-          }
-        ],
+        "body": [],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  blocks*  list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links*, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n           The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n  theme    { bodyFontFamily, headingFontFamily, cardBackgroundColor, canvasBackgroundColor, textColor, accentColor, linkColor, cardWidth, cardBorderRadius, buttonBorderRadius, buttonStyle }\n  contact  one of { contactId* } | { externalId* } | { email* }\n  data     object\n           Sample data for `{{ event.properties.* }}` tags and repeat lists: what a transactional send's `data` or a journey's event would carry.\n\nExamples:\n  Send a draft to a workspace member, filled in for one contact:\n    $ kirora templates send-test -d '{\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"contact\":{\"contactId\":\"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d\"},\"subject\":\"Welcome to Acme Shop\",\"to\":\"owner@acme-shop.com\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/sendTemplateTest\n"
+        "help": "\nThe body (--data) is one of:\n  { kind: \"design\", schemaVersion, blocks*, theme, language, plainTextOverride, contact, subject*, data, from, to* }\n  { kind*: \"html\", html*, context, plainTextOverride, contact, subject*, data, from, to* }\n\nExamples:\n  Send a draft to a workspace member, filled in for one contact:\n    $ kirora templates send-test -d '{\"blocks\":[{\"id\":\"title\",\"type\":\"heading\",\"text\":\"Welcome to Acme Shop\",\"size\":\"28px\"},{\"id\":\"intro\",\"type\":\"text\",\"text\":\"Hi {{ contact.firstName }}, thanks for joining. Your first order ships free.\"},{\"id\":\"shop\",\"type\":\"button\",\"text\":\"Start shopping\",\"href\":\"https://acme-shop.com\"},{\"id\":\"store-footer\",\"type\":\"shared\",\"sharedBlockId\":\"0192f3d1-3c4d-7e5f-8a61-7c8d9e0f1a2b\"},{\"id\":\"footer\",\"type\":\"footer\",\"text\":\"{{ org.name }}\\n{{ org.address }}\",\"locked\":true}],\"theme\":{\"bodyFontFamily\":\"Arial, sans-serif\",\"headingFontFamily\":\"Georgia, serif\",\"cardBackgroundColor\":\"#ffffff\",\"canvasBackgroundColor\":\"#f4f1ec\",\"textColor\":\"#1f2933\",\"accentColor\":\"#b4461f\",\"linkColor\":\"#b4461f\",\"cardWidth\":\"600px\",\"cardBorderRadius\":\"6px\",\"buttonStyle\":\"solid\"},\"contact\":{\"contactId\":\"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d\"},\"subject\":\"Welcome to Acme Shop\",\"to\":\"owner@acme-shop.com\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/sendTemplateTest\n"
       },
       {
         "action": "update",
@@ -5254,7 +5196,7 @@
         "method": "PATCH",
         "path": "/v1/templates/{id}",
         "summary": "Update a template",
-        "details": "Edits the template's draft. Campaigns and journeys that already copied it keep the content they were built with, and transactional sends keep the published version until `POST /v1/templates/{id}/publish`. `transactionalDefaults` is part of the draft and is published with it: a field left out stays as it is, and `null` clears it.",
+        "details": "Edits the template's draft: a design's blocks, or an HTML template's `html`; a template never changes kind (400 `VALIDATION_ERROR`). Campaigns and journeys that already copied it keep the content they were built with, and transactional sends keep the published version until `POST /v1/templates/{id}/publish`. `transactionalDefaults` is part of the draft and is published with it: a field left out stays as it is, and `null` clears it.",
         "scope": "templates:write",
         "pathParams": [
           {
@@ -5275,7 +5217,7 @@
             "flag": "schema-version",
             "kind": "number",
             "placeholder": "<number>",
-            "description": "The block format version.",
+            "description": "The block format version. A design only.",
             "alias": "schemaVersion"
           },
           {
@@ -5283,14 +5225,21 @@
             "flag": "language",
             "kind": "string",
             "placeholder": "<value>",
-            "description": "The language the email is written in, as a BCP 47 tag (\"en\", \"fr-BE\", \"ar\"). It sets the HTML `lang` and the reading direction: Arabic, Hebrew, Persian, Urdu and other right-to-left languages render right to left. Defaults to \"en\"."
+            "description": "The email's language. A design only: an HTML template's `<html lang>` says it."
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "kind": "string",
+            "placeholder": "<value>",
+            "description": "The whole email. An HTML template only: the kind never changes."
           },
           {
             "name": "plainTextOverride",
             "flag": "plain-text-override",
             "kind": "string",
             "placeholder": "<value>",
-            "description": "Plain text sent instead of the version generated from the blocks; `null` clears it.",
+            "description": "Plain text sent instead of the version generated from the design or HTML; `null` clears it.",
             "alias": "plainTextOverride"
           },
           {
@@ -5316,7 +5265,7 @@
             "alias": "expectedRevision"
           }
         ],
-        "help": "\nBody fields only --data can carry (* required):\n  blocks                 list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links*, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n                         The blocks, rendered top to bottom: at most 200 across the whole tree and five levels including the root.\n  theme                  { bodyFontFamily, headingFontFamily, cardBackgroundColor, canvasBackgroundColor, textColor, accentColor, linkColor, cardWidth, cardBorderRadius, buttonBorderRadius, buttonStyle }\n  transactionalDefaults  { subject, previewText, from, replyTo }\n                         The subject, preview text and sender a transactional send of this template uses unless the send gives its own; campaigns and journeys set their own.\n\nExamples:\n  Change the subject, guarding against a concurrent edit:\n    $ kirora templates update <id> -d '{\"transactionalDefaults\":{\"subject\":\"Welcome to Acme Shop, {{ contact.firstName }}\"},\"expectedRevision\":1}'\n\nAPI reference: https://kirora.io/docs/api/reference/updateTemplate\n"
+        "help": "\nBody fields only --data can carry (* required):\n  blocks                 list of one of { id*, type*: \"header\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"heading\", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: \"text\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"image\", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: \"button\", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: \"divider\", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: \"spacer\", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: \"columns\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"columns3\", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: \"imagetext\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: \"imagegroup\", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: \"boxed\", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: \"quote\", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: \"list\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"product\", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: \"video\", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: \"social\", style, visibleIf, visibleIfPresent, showOn, align, links, display, iconStyle } | { id*, type*: \"menu\", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: \"html\", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: \"section\", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: \"footer\", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: \"repeat\", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: \"shared\", style, visibleIfPresent, showOn, sharedBlockId*, override }\n                         The blocks.\n  theme                  { bodyFontFamily, headingFontFamily, cardBackgroundColor, canvasBackgroundColor, textColor, accentColor, linkColor, headingColor, buttonTextColor, baseFontSize, cardWidth, cardBorderRadius, buttonBorderRadius, buttonStyle }\n  transactionalDefaults  { subject, previewText, from, replyTo }\n                         The subject, preview text and sender a transactional send of this template uses unless the send gives its own; campaigns and journeys set their own.\n\nExamples:\n  Change the subject, guarding against a concurrent edit:\n    $ kirora templates update <id> -d '{\"transactionalDefaults\":{\"subject\":\"Welcome to Acme Shop, {{ contact.firstName }}\"},\"expectedRevision\":1}'\n\nAPI reference: https://kirora.io/docs/api/reference/updateTemplate\n"
       },
       {
         "action": "versions get",
@@ -5324,7 +5273,7 @@
         "method": "GET",
         "path": "/v1/templates/{id}/versions/{version}",
         "summary": "Retrieve a template version",
-        "details": "Returns one published version of a template with its full content and `transactionalDefaults`, and the shared blocks and brand theme it was published with, to view or compare: two versions with the same blocks can still send different footers.",
+        "details": "Returns one published version of a template with its full content and `transactionalDefaults`, and the shared blocks and brand kit it was published with, to view or compare: two versions with the same blocks can still send different footers.",
         "scope": "templates:read",
         "pathParams": [
           {
@@ -5445,7 +5394,7 @@
         "method": "DELETE",
         "path": "/v1/topics/{id}",
         "summary": "Delete a topic",
-        "details": "Deletes a topic. Refused with `409 IN_USE` while a campaign, or an active or paused journey, uses it (the journeys listed in `details.journeys`); ended journeys do not count. Consent changes keep its past changes. Every contact’s choices on the topic go with it, so agent keys are refused with 403.",
+        "details": "Deletes a topic. Refused with `409 IN_USE` while a campaign sends on it, and while rules name it, listed in `details`: campaigns not yet sent or cancelled whose rules or exclusions name it, or whose content has a block shown only to, or hidden from, its contacts (`details.campaigns`), goals not retired (`details.goals`), active or paused journeys (`details.journeys`), segments (`details.segments`), and templates (the draft or the published version) and shared blocks with such a block (`details.templates`, `details.sharedBlocks`), each listing up to 50, with `details.hasMore` when there are more. Ended journeys do not count. Consent changes keep its past changes. Every contact’s choices on the topic go with it, so agent keys are refused with 403.",
         "scope": "topics:write",
         "pathParams": [
           {
@@ -5597,23 +5546,20 @@
             "flag": "send-at",
             "kind": "string",
             "placeholder": "<date-time>",
-            "description": "When to send, up to 90 days ahead, with its UTC offset. Suppression and push reachability are checked when the request is accepted and again when it goes; `deliver: first` picks its channel when accepted.",
+            "description": "When to send, up to 90 days ahead, with its UTC offset. Suppression and push reachability are checked when the request is accepted and again when it goes. A `fallbackOrder` fallback keeps this time but goes only after the message before it fails, is skipped or bounces.",
             "alias": "sendAt"
           },
           {
-            "name": "deliver",
-            "flag": "deliver",
-            "kind": "string",
-            "placeholder": "<value>",
-            "choices": [
-              "all",
-              "first"
-            ],
-            "description": "With both `push` and `email`: `all` sends each the contact can receive; `first` sends push when the contact has a reachable device, else email."
+            "name": "fallbackOrder",
+            "flag": "fallback-order",
+            "kind": "list",
+            "placeholder": "<values...>",
+            "description": "With both `push` and `email`, each once, in the order to try them: the first the contact can receive is sent, and the next only if it fails, is skipped or bounces. Left out, each channel the contact can receive is sent.",
+            "alias": "fallbackOrder"
           }
         ],
         "idempotencyKey": "optional",
-        "help": "\nBody fields only --data can carry (* required):\n  to*    one of { contactId* } | { externalId* } | { email* }\n  data   object\n         Values the content reads as `{{ data.<key> }}`: a stored template, inline email and the push `title` and `body` alike.\n  email  one of { template*, subject, previewText, from, replyTo, attachments, threading, tracking } | { subject*, previewText, html*, text, from*, replyTo, attachments, threading, tracking }\n         Inline (`subject`, `from`, `html`), or a stored template by `template`; either may carry `attachments`, `threading` and `tracking`.\n  push   { title*, body*, actionUrl, imageUrl, iconUrl, data, buttons, collapseKey, sound, badge, ttl, urgency, overrides, pushProjectId }\n\nExamples:\n  Email from a stored template:\n    $ kirora transactional send -d '{\"to\":{\"externalId\":\"customer-4821\"},\"correlationId\":\"order-1001\",\"data\":{\"order_id\":\"1001\",\"total\":\"$45.00\",\"item_count\":3},\"email\":{\"template\":\"order-receipt\"}}'\n  Email written in the request:\n    $ kirora transactional send -d '{\"to\":{\"email\":\"amaka@example.com\"},\"sensitive\":true,\"data\":{\"code\":\"482913\"},\"email\":{\"subject\":\"Your sign-in code\",\"from\":\"Juniper Kitchen <security@juniperkitchen.com>\",\"html\":\"<p>Your code is <strong>{{ data.code }}</strong>. It expires in 10 minutes.</p>\",\"text\":\"Your code is {{ data.code }}. It expires in 10 minutes.\"}}'\n  Push and email together:\n    $ kirora transactional send -d '{\"to\":{\"contactId\":\"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d\"},\"correlationId\":\"delivery-7731\",\"push\":{\"pushProjectId\":\"0192f3a1-91d4-7b2a-8c3e-4d5e6f7a8b9c\",\"title\":\"Order {{ data.order_id }} is on its way\",\"body\":\"Arriving {{ data.eta }}.\"},\"data\":{\"order_id\":\"7731\",\"eta\":\"Thursday\"},\"email\":{\"template\":\"order-shipped\"},\"deliver\":\"all\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/sendTransactionalMessage\n"
+        "help": "\nBody fields only --data can carry (* required):\n  to*    one of { contactId* } | { externalId* } | { email* }\n  data   object\n         Values the content reads as `{{ data.<key> }}`: a stored template, inline email and the push `title` and `body` alike.\n  email  one of { template*, subject, previewText, from, replyTo, attachments, threading, tracking } | { subject*, previewText, html*, text, from*, replyTo, attachments, threading, tracking }\n         Inline (`subject`, `from`, `html`), or a stored template by `template`; either may carry `attachments`, `threading` and `tracking`.\n  push   { title*, body*, actionUrl, imageUrl, iconUrl, data, buttons, collapseKey, sound, badge, ttl, urgency, overrides, pushProjectId }\n\nExamples:\n  Email from a stored template:\n    $ kirora transactional send -d '{\"to\":{\"externalId\":\"customer-4821\"},\"correlationId\":\"order-1001\",\"data\":{\"order_id\":\"1001\",\"total\":\"$45.00\",\"item_count\":3},\"email\":{\"template\":\"order-receipt\"}}'\n  Email written in the request:\n    $ kirora transactional send -d '{\"to\":{\"email\":\"amaka@example.com\"},\"sensitive\":true,\"data\":{\"code\":\"482913\"},\"email\":{\"subject\":\"Your sign-in code\",\"from\":\"Juniper Kitchen <security@juniperkitchen.com>\",\"html\":\"<p>Your code is <strong>{{ data.code }}</strong>. It expires in 10 minutes.</p>\",\"text\":\"Your code is {{ data.code }}. It expires in 10 minutes.\"}}'\n  Push and email together:\n    $ kirora transactional send -d '{\"to\":{\"contactId\":\"0192f3a1-7c2e-7d4b-9a10-3e5f6a7b8c9d\"},\"correlationId\":\"delivery-7731\",\"push\":{\"pushProjectId\":\"0192f3a1-91d4-7b2a-8c3e-4d5e6f7a8b9c\",\"title\":\"Order {{ data.order_id }} is on its way\",\"body\":\"Arriving {{ data.eta }}.\"},\"data\":{\"order_id\":\"7731\",\"eta\":\"Thursday\"},\"email\":{\"template\":\"order-shipped\"}}'\n\nAPI reference: https://kirora.io/docs/api/reference/sendTransactionalMessage\n"
       },
       {
         "action": "send-batch",
@@ -6022,7 +5968,7 @@
           }
         ],
         "idempotencyKey": "optional",
-        "help": "\nExamples:\n  A workspace for one of your tenants:\n    $ kirora workspaces create -d '{\"name\":\"Acme Shop Lagos\",\"externalId\":\"tenant-lagos-01\",\"country\":\"NG\",\"timezone\":\"Africa/Lagos\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/createWorkspace\n"
+        "help": "\nExamples:\n  A workspace for one of your tenants:\n    $ kirora workspaces create -d '{\"name\":\"Juniper Kitchen London\",\"externalId\":\"tenant-lagos-01\",\"country\":\"GB\",\"timezone\":\"Europe/London\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/createWorkspace\n"
       },
       {
         "action": "delete",
@@ -6159,7 +6105,7 @@
             "description": "IANA timezone, such as `Europe/Berlin`."
           }
         ],
-        "help": "\nExamples:\n  Rename the workspace:\n    $ kirora workspaces update <external-id> -d '{\"name\":\"Acme Shop Nigeria\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/updateWorkspace\n"
+        "help": "\nExamples:\n  Rename the workspace:\n    $ kirora workspaces update <external-id> -d '{\"name\":\"Juniper Kitchen UK\"}'\n\nAPI reference: https://kirora.io/docs/api/reference/updateWorkspace\n"
       }
     ]
   }

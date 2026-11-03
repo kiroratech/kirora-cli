@@ -43,8 +43,8 @@ Body fields only --data can carry (* required):
 Examples:
   Newsletter members with no order in 90 days:
     $ kirora segments create -d '{"name":"Lapsed customers","description":"Newsletter readers who have not ordered in 90 days, for the win-back offer","rules":{"all":[{"type":"event","name":"Order Completed","count":{"operator":"equals","value":0},"withinDays":90},{"type":"list","listIds":["0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e"],"member":true}]},"tags":["Win-back"]}'
-  Nested rules: Nigerian pro customers, or anyone who clicked:
-    $ kirora segments create -d '{"name":"Engaged or pro","rules":{"any":[{"all":[{"type":"contact","field":"phone","operator":"exists"},{"type":"attribute","field":"attributes.plan","operator":"equals","value":"pro"}]},{"type":"activity","activity":"clicked","withinDays":30}]}}'
+  Nested rules: premium customers with a phone, or anyone who clicked:
+    $ kirora segments create -d '{"name":"Engaged or premium","rules":{"any":[{"all":[{"type":"contact","field":"phone","operator":"exists"},{"type":"attribute","field":"attributes.plan","operator":"equals","value":"premium"}]},{"type":"activity","activity":"clicked","withinDays":30}]}}'
 
 API reference: https://kirora.io/docs/api/reference/createSegment
 ```
@@ -147,7 +147,7 @@ API reference: https://kirora.io/docs/api/reference/getSegmentSizeHistory
 
 Update a segment. `PATCH /v1/segments/{id}`, needs `segments:write`.
 
-Replaces the segment's rules, renames it or changes its description. Changing rules changes who the segment matches from the next evaluation onward; campaigns already sent are unaffected. When an agent key changes the rules, everything that uses the segment, directly or through segments that name it, waits for a person again: scheduled campaigns are unscheduled, active journeys are paused, and each needs a human confirmation before it sends.
+Replaces the segment's rules, renames it or changes its description. Changing rules changes who the segment matches from the next evaluation onward; campaigns already sent are unaffected. When an agent key changes the rules, everything that uses the segment, directly or through segments that name it, waits for a person again: scheduled campaigns are unscheduled, active journeys are paused, and each needs a human confirmation before it sends. While a campaign that uses it is still sending or deciding an A/B test, an agent key cannot change the rules (403 `AGENT_KEY_REFUSED`).
 
 - `-d, --data` takes the whole JSON body; flags set fields on top.
 
@@ -172,7 +172,7 @@ API reference: https://kirora.io/docs/api/reference/updateSegment
 
 Retrieve a segment's usage. `GET /v1/segments/{id}/usage`, needs `segments:read`.
 
-Returns what uses the segment: campaigns whose audience is this segment or whose rules or exclusions name it, journeys whose rules or steps name it, and other segments whose rules name it, up to 50 of each (`hasMore` when a kind holds more). Deleting the segment is refused (409 `IN_USE`) while any of them is a campaign not yet sent or cancelled (`draft`, `scheduled`, `testing` for an A/B test, or `sending`), an `active` or `paused` journey, or another segment.
+Returns what uses the segment: campaigns whose audience is this segment, whose rules or exclusions name it, or whose content shows a block only to it (in any A/B version), journeys whose rules or steps name it, and other segments whose rules name it, up to 50 of each (`hasMore` when a kind holds more). Deleting the segment is refused (409 `IN_USE`) while any of them is a campaign not yet sent or cancelled (`draft`, `scheduled`, `testing` for an A/B test, or `sending`), an `active` or `paused` journey, or another segment.
 
 ```text
 API reference: https://kirora.io/docs/api/reference/getSegmentUsage

@@ -20,7 +20,7 @@ API reference: https://kirora.io/docs/api/reference/archiveCampaign
 
 Retrieve a campaign's email results by domain, device or country. `GET /v1/campaigns/{id}/breakdown`, needs `campaigns:read`.
 
-Splits a campaign's email results into rows by the recipient's email domain (`gmail.com`), the device they first opened or clicked on (`desktop`, `mobile`, `tablet`), or the contact's country (`NG`), counted the same way as the campaign's metrics. Use it to find where a problem sits: bounces concentrated on one domain point at that mailbox provider, not at the whole list.
+Splits a campaign's email results into rows by the recipient's email domain (`gmail.com`), the device they first opened or clicked on (`desktop`, `mobile`, `tablet`), or the contact's country (`GB`), counted the same way as the campaign's metrics. Use it to find where a problem sits: bounces concentrated on one domain point at that mailbox provider, not at the whole list.
 
 | Flag | |
 | --- | --- |
@@ -244,8 +244,8 @@ The body (--data) is one of:
 Examples:
   Everyone receives it at the same moment, 08:00 UTC:
     $ kirora campaigns schedule <id> -d '{"type":"fixed","sendAt":"2026-11-03T08:00:00.000Z"}'
-  Each person receives it at 08:00 in their own timezone (Africa/Lagos where none is known):
-    $ kirora campaigns schedule <id> -d '{"type":"local_time","localDateTime":"2026-11-03T08:00","timezoneIfUnknown":"Africa/Lagos","ifTimeHasPassed":"skip"}'
+  Each person receives it at 08:00 in their own timezone (Europe/London where none is known):
+    $ kirora campaigns schedule <id> -d '{"type":"local_time","localDateTime":"2026-11-03T08:00","timezoneIfUnknown":"Europe/London","ifTimeHasPassed":"skip"}'
 
 API reference: https://kirora.io/docs/api/reference/scheduleCampaign
 ```
