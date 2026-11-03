@@ -2,12 +2,13 @@ import { spawn } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import { createServer, request, type RequestListener } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, vi } from 'vitest';
 import { runCli } from '../src/cli.js';
+import { configPath } from '../src/lib/config.js';
 import type { Io } from '../src/lib/io.js';
 import type { SecretStore } from '../src/lib/secrets.js';
 
@@ -97,7 +98,7 @@ export async function fakeIo(route: Route, env: Io['env'] = {}) {
   const io: Io = {
     env: { XDG_CONFIG_HOME: await tempDir(), ...env },
     fetch: fetch as unknown as typeof globalThis.fetch,
-    stdout: (text) => (output.stdout += text),
+    stdout: async (text) => void (output.stdout += text),
     stderr: (text) => (output.stderr += text),
     pipeStdout: async (body) => {
       output.stdout += await new Response(body).text();
@@ -132,6 +133,12 @@ export function hangUntilAborted(init: RequestInit): Promise<Response> {
 export async function listeningPort(output: { stderr: string }): Promise<string> {
   await vi.waitFor(() => expect(output.stderr).toContain('Listening'));
   return /localhost:(\d+)/.exec(output.stderr)![1]!;
+}
+
+/** Writes `config` as the config file of a test's `env`, valid or not. */
+export async function writeConfig(env: Io['env'], config: object) {
+  await mkdir(dirname(configPath(env)), { recursive: true });
+  await writeFile(configPath(env), JSON.stringify(config));
 }
 
 /** A new empty folder, for a config or a file to upload. */

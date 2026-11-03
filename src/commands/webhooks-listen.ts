@@ -7,7 +7,7 @@ import { parseNumber } from '../lib/args.js';
 import { clientFor } from '../lib/client.js';
 import { resolveCredentials } from '../lib/config.js';
 import type { GlobalFlags, Io } from '../lib/io.js';
-import { CliError, isApiError, messageOf } from '../lib/output.js';
+import { CliError, isApiError, messageOf, printable } from '../lib/output.js';
 import { RESOURCES, WEBHOOK_EVENTS } from '../operations.js';
 
 type ListenFlags = GlobalFlags & {
@@ -90,11 +90,16 @@ async function listen(flags: ListenFlags, paths: Paths, io: Io) {
   const client = await clientFor(profile, flags.workspace, io.fetch);
   const forwardTo = flags.forwardTo && withScheme(flags.forwardTo);
   let secret = '';
+  // Deliveries being handled, so stopping can wait for each to finish before returning.
+  const handling = new Set<Promise<void>>();
 
   const server = createServer((request, response) => {
-    receive(request, response).catch(() => {
-      if (!response.headersSent) response.writeHead(500).end();
-    });
+    const handled = receive(request, response)
+      .catch(() => {
+        if (!response.headersSent) response.writeHead(500).end();
+      })
+      .finally(() => handling.delete(handled));
+    handling.add(handled);
   });
   server.requestTimeout = REQUEST_TIMEOUT_MS;
   server.headersTimeout = REQUEST_TIMEOUT_MS;
@@ -114,10 +119,18 @@ async function listen(flags: ListenFlags, paths: Paths, io: Io) {
     // the body too: a replay can't relabel a delivery.
     const verified = verifyWebhook(secret, rawBody, request.headers);
     if (!verified) return unsigned();
+    // Stopping: not handled here, so Kirora delivers it again later.
+    if (stop.signal.aborted) return void response.writeHead(503).end();
     const forwarded = forwardTo
-      ? await forward(io.fetch ?? globalThis.fetch, forwardTo, rawBody, request.headers)
+      ? await forward(
+          io.fetch ?? globalThis.fetch,
+          forwardTo,
+          rawBody,
+          request.headers,
+          stop.signal,
+        )
       : undefined;
-    io.stdout(
+    await io.stdout(
       `${JSON.stringify({
         receivedAt: new Date().toISOString(),
         event: verified.headers.event,
@@ -154,24 +167,31 @@ async function listen(flags: ListenFlags, paths: Paths, io: Io) {
       if (!stop.signal.aborted) {
         const { port } = server.address() as AddressInfo;
         io.stderr(
-          `Listening on localhost:${port} for ${flags.url} (webhook ${webhook.id}). ` +
+          `Listening on localhost:${port} for ${flags.url} (webhook ${printable(webhook.id)}). ` +
             'Ctrl+C stops, and deletes the webhook.\n',
         );
         if (forwardTo) {
           io.stderr(
-            `Deliveries are signed with ${webhook.secret}: give it to your handler as its webhook secret while this runs.\n`,
+            `Deliveries are signed with ${printable(webhook.secret)}: give it to your handler as its webhook secret while this runs.\n`,
           );
         }
         await once(stop.signal, 'abort');
       }
     } finally {
       await unsubscribe(client, webhook.id, flags.url, paths.delete, giveUp.signal);
-      io.stderr(`Deleted webhook ${webhook.id}.\n`);
+      io.stderr(`Deleted webhook ${printable(webhook.id)}.\n`);
     }
   } finally {
-    release();
+    // Nothing more comes in, nothing still going out waits, and what was being handled
+    // finishes before Ctrl+C goes back to Node: only then has listening stopped.
     server.close();
+    stop.abort();
     server.closeAllConnections();
+    // A second Ctrl+C stops waiting, as it stops waiting for the unsubscribe.
+    if (!giveUp.signal.aborted) {
+      await Promise.race([Promise.allSettled(handling), once(giveUp.signal, 'abort')]);
+    }
+    release();
   }
 }
 
@@ -270,6 +290,8 @@ function readBody(request: IncomingMessage, limit: number): Promise<string | und
     request.on('data', onData);
     request.once('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     request.once('error', reject);
+    // A connection closed before the body ended, as when listening stops; a no-op after 'end'.
+    request.once('close', () => reject(new Error('Closed before its body ended.')));
   });
 }
 
@@ -282,6 +304,7 @@ async function forward(
   url: string,
   rawBody: string,
   headers: IncomingMessage['headers'],
+  stopped: AbortSignal,
 ): Promise<{ url: string; status?: number; error?: string }> {
   const passed = Object.entries(headers).flatMap(([name, value]) =>
     name.startsWith('x-webhook-') && typeof value === 'string' ? [[name, value]] : [],
@@ -294,12 +317,15 @@ async function forward(
       // The handler's own answer: a redirect (to a login page, say) is its failure, not
       // the page it points to.
       redirect: 'manual',
-      signal: AbortSignal.timeout(FORWARD_TIMEOUT_MS),
+      signal: AbortSignal.any([stopped, AbortSignal.timeout(FORWARD_TIMEOUT_MS)]),
     });
     await response.body?.cancel();
     return { url, status: response.status };
   } catch (error) {
-    return { url, error: messageOf(error) };
+    return {
+      url,
+      error: stopped.aborted ? 'cancelled: listening stopped' : messageOf(error),
+    };
   }
 }
 

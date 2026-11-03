@@ -105,6 +105,17 @@ function cliError(code: CliErrorCode, message: string, more: object = {}): strin
   return json({ error: { code, message, ...more } });
 }
 
+/**
+ * Escapes control characters (`\u001b` for ESC) in text from the API, such as a
+ * workspace name, so status lines printed to a terminal can't carry its escape codes.
+ */
+export function printable(text: string): string {
+  return text.replace(
+    /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  );
+}
+
 export function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

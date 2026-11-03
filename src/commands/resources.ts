@@ -5,8 +5,13 @@ import { basename } from 'node:path';
 import type { RequestOptions } from '@kirora/node';
 import { Command, Option } from 'commander';
 import { parseNumber } from '../lib/args.js';
-import { clientFor, recordResponses, statusAndHeaders } from '../lib/client.js';
-import { resolveCredentials } from '../lib/config.js';
+import {
+  clientFor,
+  recordResponses,
+  statusAndHeaders,
+  workspaceFor,
+} from '../lib/client.js';
+import { type Credentials, resolveCredentials } from '../lib/config.js';
 import type { GlobalFlags, Io } from '../lib/io.js';
 import { CliError, json, messageOf } from '../lib/output.js';
 import { RESOURCES } from '../operations.js';
@@ -176,22 +181,51 @@ function addOperation(parent: Command, action: string, operation: Operation, io:
       io.stdout(json({ dryRun: true, request: describeRequest(call) }));
       return;
     }
-    if (operation.destructive && !values.yes) await confirmDelete(command, io);
-    await send(call, flags, io);
+    if (operation.destructive && !values.yes && !io.interactive) {
+      throw new CliError(
+        'CONFIRMATION_REQUIRED',
+        `${deleteTarget(command, call)} deletes, and can't be undone. Add --yes to go ahead.`,
+      );
+    }
+    const credentials = await resolveCredentials(io, flags.profile);
+    if (operation.destructive && !values.yes) {
+      const question = `Run ${deleteTarget(command, call)}${keyUsed(credentials, flags)}?`;
+      if (!(await io.confirm(`${question} It can't be undone.`))) {
+        throw new CliError('CANCELLED', 'Nothing was deleted.');
+      }
+    }
+    await send(call, credentials, flags, io);
   });
 }
 
-async function confirmDelete(command: Command, io: Io) {
-  const what = `kirora ${commandPath(command)} ${command.args.join(' ')}`.trimEnd();
-  if (!io.interactive) {
-    throw new CliError(
-      'CONFIRMATION_REQUIRED',
-      `${what} deletes, and can't be undone. Add --yes to go ahead.`,
-    );
-  }
-  if (!(await io.confirm(`Run ${what}? It can't be undone.`))) {
-    throw new CliError('CANCELLED', 'Nothing was deleted.');
-  }
+/**
+ * Describes what a delete acts on: the command and the request, with every id in its
+ * path however it was given and how much its body names.
+ */
+function deleteTarget(command: Command, { method, path, body }: OperationCall): string {
+  return `kirora ${commandPath(command)} (${method} ${path}${bodySummary(body)})`;
+}
+
+/** Names the workspace and key a request will use, for a question about it. */
+function keyUsed({ profile, profileName }: Credentials, flags: GlobalFlags): string {
+  const workspace = workspaceFor(profile, flags.workspace);
+  return (
+    (workspace === undefined ? '' : ` in workspace ${workspace}`) +
+    (profileName === undefined ? ' with KIRORA_API_KEY' : ` with profile ${profileName}`)
+  );
+}
+
+/** Counts what a body's lists name (`3 emails`), without printing them. */
+function bodySummary(body: unknown): string {
+  if (body === undefined || body instanceof FormData) return '';
+  if (Array.isArray(body)) return ` for ${body.length} items`;
+  const counts =
+    typeof body === 'object' && body !== null
+      ? Object.entries(body).flatMap(([name, value]) =>
+          Array.isArray(value) ? [`${value.length} ${name}`] : [],
+        )
+      : [];
+  return counts.length > 0 ? ` for ${counts.join(', ')}` : ' with a body';
 }
 
 function commandPath(command: Command): string {
@@ -256,16 +290,22 @@ function pathIds(
   return ids;
 }
 
-async function send(operationCall: OperationCall, flags: GlobalFlags, io: Io) {
+async function send(
+  operationCall: OperationCall,
+  { profile }: Credentials,
+  flags: GlobalFlags,
+  io: Io,
+) {
   const { method, path, query, body, idempotencyKey, paginate, responseType } =
     operationCall;
   const recorder = recordResponses(io.fetch ?? globalThis.fetch);
-  const { profile } = await resolveCredentials(io, flags.profile);
   const client = await clientFor(profile, flags.workspace, recorder.fetch);
 
   if (paginate) {
+    // Waits while stdout is full, so a slow reader holds back the next page rather
+    // than every page piling up in memory.
     for await (const item of client.list(path, { query })) {
-      io.stdout(`${JSON.stringify(item)}\n`);
+      await io.stdout(`${JSON.stringify(item)}\n`);
     }
     return;
   }

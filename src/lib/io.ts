@@ -4,7 +4,8 @@ import type { Environment, Secrets } from './config.js';
 export type Io = {
   env: Environment;
   fetch?: typeof globalThis.fetch;
-  stdout: (text: string) => void;
+  /** Writes to stdout, resolving once stdout can take more: await it in a loop. */
+  stdout: (text: string) => Promise<void>;
   /** Writes a body to stdout as it arrives, as fast as stdout takes it. */
   pipeStdout: (body: NonNullable<Response['body']>) => Promise<void>;
   stderr: (text: string) => void;

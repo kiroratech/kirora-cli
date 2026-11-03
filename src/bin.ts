@@ -20,8 +20,16 @@ process.stdout.on('error', (error: NodeJS.ErrnoException) => {
 
 process.exitCode = await runCli(process.argv.slice(2), {
   env: process.env,
-  stdout: (output) => {
-    if (!stdoutClosed) process.stdout.write(output);
+  stdout: async (output) => {
+    if (stdoutClosed || process.stdout.write(output)) return;
+    // Resolves on close too: after EPIPE, 'drain' never comes.
+    await new Promise<void>((resolve) => {
+      const done = () => {
+        process.stdout.off('drain', done).off('close', done);
+        resolve();
+      };
+      process.stdout.once('drain', done).once('close', done);
+    });
   },
   pipeStdout: (body) => pipeline(Readable.fromWeb(body), process.stdout, { end: false }),
   stderr: (output) => void process.stderr.write(output),

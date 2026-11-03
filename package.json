@@ -1,23 +1,42 @@
 {
   "name": "@kirora/cli",
   "version": "0.1.0",
-  "private": true,
-  "description": "Kirora CLI",
+  "description": "The Kirora API from your terminal: contacts, messages, webhooks and more.",
+  "keywords": [
+    "kirora",
+    "cli",
+    "email",
+    "marketing",
+    "webhooks"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kiroratech/kirora-cli.git"
+  },
+  "homepage": "https://kirora.io/docs/sdks/cli",
+  "bugs": {
+    "url": "https://github.com/kiroratech/kirora-cli/issues"
+  },
   "type": "module",
   "bin": {
     "kirora": "dist/bin.js"
   },
   "files": [
     "dist",
+    "docs/usage.md",
     "skills",
     "llms.txt"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22.13"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
     "codegen": "node scripts/codegen.mjs",
     "start": "tsx src/bin.ts",
     "typecheck": "tsc -p tsconfig.json",
@@ -30,7 +49,7 @@
   "dependencies": {
     "@inquirer/confirm": "^6.3.5",
     "@inquirer/password": "^5.2.3",
-    "@kirora/node": "link:../node-sdk",
+    "@kirora/node": "^0.1.0",
     "commander": "^15.0.0"
   },
   "devDependencies": {

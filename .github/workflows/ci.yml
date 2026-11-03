@@ -14,9 +14,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# `@kirora/node` is linked from `../node-sdk` until it's on npm, so each job checks the
-# library out beside this repository and builds it first. Once it's published, depend on
-# its version instead and drop those steps.
 jobs:
   # Checks whose result doesn't depend on the platform or Node version, so they run once.
   check:
@@ -27,11 +24,6 @@ jobs:
         with:
           path: cli
           persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: kiroratech/node-sdk
-          path: node-sdk
-          persist-credentials: false
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: cli/package.json
@@ -39,11 +31,7 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: |
-            cli/pnpm-lock.yaml
-            node-sdk/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile && pnpm build
-        working-directory: node-sdk
+          cache-dependency-path: cli/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: cli
       - run: pnpm format:check
@@ -70,11 +58,6 @@ jobs:
         with:
           path: cli
           persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: kiroratech/node-sdk
-          path: node-sdk
-          persist-credentials: false
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: cli/package.json
@@ -82,11 +65,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
-          cache-dependency-path: |
-            cli/pnpm-lock.yaml
-            node-sdk/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile && pnpm build
-        working-directory: node-sdk
+          cache-dependency-path: cli/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: cli
       - run: pnpm test
