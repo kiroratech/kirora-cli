@@ -136,13 +136,13 @@ Body fields only --data can carry (* required):
               Custom attributes, merged key by key; `null` removes one.
   consent     { email, push, statement }
   topics      object
-              Topic choices keyed by topic id, at most 50, as `PUT /v1/contacts/{id}/topics/{topicId}` sets them: `true` or `false` for every channel, or `{ "email": …, "push": … }` per channel.
+              Topic choices keyed by topic id, at most 50, as `PUT /v1/contacts/{id}/topics/{topicId}` sets them: `{ "subscribed": true }` for every channel, or `{ "channels": { "email": … } }` per channel.
 
 Examples:
   By your own id, with consent:
-    $ kirora contacts identify -d '{"externalId":"customer-4821","email":"amaka@example.com","firstName":"Amaka","lastName":"Obi","phone":"+2348031234567","timezone":"Africa/Lagos","dates":{"birthday":"1992-03-14"},"attributes":{"plan":"pro","favourite_spice":"smoked paprika","orders":3},"consent":{"email":true,"statement":{"basis":"opted_in","evidence":"Checkout opt-in on shop.example.com"}}}'
+    $ kirora contacts identify -d '{"externalId":"customer-4821","email":"amaka@example.com","firstName":"Amaka","lastName":"Obi","phone":"+447700900123","timezone":"Europe/London","dates":{"birthday":"1992-03-14"},"attributes":{"plan":"pro","favourite_spice":"smoked paprika","orders":3},"consent":{"email":true,"statement":{"basis":"opted_in","evidence":"Checkout opt-in on shop.example.com"}}}'
   With topic choices:
-    $ kirora contacts identify -d '{"externalId":"customer-4821","topics":{"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f":{"email":true,"push":false}}}'
+    $ kirora contacts identify -d '{"externalId":"customer-4821","topics":{"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f":{"channels":{"email":true,"push":false}}}}'
   By email address only:
     $ kirora contacts identify -d '{"email":"amaka@example.com","attributes":{"orders":3}}'
 
@@ -164,7 +164,7 @@ Body fields only --data can carry (* required):
 
 Examples:
   One contact updated, two refused, each in its own result:
-    $ kirora contacts identify-batch -d '{"contacts":[{"externalId":"customer-4821","email":"amaka@example.com","firstName":"Amaka","topics":{"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f":true}},{"externalId":"customer-9999","email":"amaka@example.com"},{"externalId":"customer-5310","email":"tunde@example.com","consent":{"email":true}}]}'
+    $ kirora contacts identify-batch -d '{"contacts":[{"externalId":"customer-4821","email":"amaka@example.com","firstName":"Amaka","topics":{"0192f3b0-6a1b-7c2d-8e3f-4a5b6c7d8e9f":{"subscribed":true}}},{"externalId":"customer-9999","email":"amaka@example.com"},{"externalId":"customer-5310","email":"tunde@example.com","consent":{"email":true}}]}'
 
 API reference: https://kirora.io/docs/api/reference/identifyContactsBatch
 ```
@@ -385,15 +385,17 @@ Joins a contact to a topic or removes them from it, in the shape identify's `top
 | Flag | |
 | --- | --- |
 | `--id-type <value>` | What `{id}` is: Kirora's id for the contact (`id`, the default), your own (`externalId`, as set with identify) or its email address (`email`, matched trimmed and without case). One of `id`, `externalId`, `email`. |
+| `--subscribed`, `--no-subscribed` | Join (true) or leave (false) the topic on every channel; it clears each channel's own choice. |
 
 ```text
 Body fields only --data can carry (* required):
-  subscribed*  one of true/false | object
-  statement    { basis*, evidence*, consentedAt, wording }
+  channels   object
+             One channel's choice each, applied after `subscribed`; a channel left out keeps its choice.
+  statement  { basis*, evidence*, consentedAt, wording }
 
 Examples:
   Join by email, not by push:
-    $ kirora contacts topics set <contact-id> <topic-id> -d '{"subscribed":{"email":true,"push":false},"statement":{"basis":"opted_in","evidence":"Preference centre"}}'
+    $ kirora contacts topics set <contact-id> <topic-id> -d '{"channels":{"email":true,"push":false},"statement":{"basis":"opted_in","evidence":"Preference centre"}}'
   Leave on every channel:
     $ kirora contacts topics set <contact-id> <topic-id> -d '{"subscribed":false}'
 

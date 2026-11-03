@@ -15,7 +15,7 @@ import {
   type StoredProfile,
 } from '../lib/config.js';
 import type { GlobalFlags, Io } from '../lib/io.js';
-import { CliError, json, messageOf } from '../lib/output.js';
+import { CliError, json, messageOf, printable } from '../lib/output.js';
 
 /** Adds login, logout, whoami and `auth list`, `switch` and `rename` to `program`. */
 export function addAuthCommands(program: Command, io: Io): void {
@@ -116,7 +116,7 @@ async function login(command: Command, io: Io) {
     }
   }
   io.stdout(
-    `Logged in to ${caller.workspace.name} with the key "${caller.apiKey.name}" ` +
+    `Logged in to ${printable(caller.workspace.name)} with the key "${printable(caller.apiKey.name)}" ` +
       `as profile ${name}, kept in the ${store ? store.name : 'config file'}.\n`,
   );
 }

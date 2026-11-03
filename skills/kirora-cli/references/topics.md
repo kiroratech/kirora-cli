@@ -31,7 +31,7 @@ API reference: https://kirora.io/docs/api/reference/createTopic
 
 Delete a topic. `DELETE /v1/topics/{id}`, needs `topics:write`.
 
-Deletes a topic. Refused with `409 IN_USE` while a campaign, or an active or paused journey, uses it (the journeys listed in `details.journeys`); ended journeys do not count. Consent changes keep its past changes. Every contact’s choices on the topic go with it, so agent keys are refused with 403.
+Deletes a topic. Refused with `409 IN_USE` while a campaign sends on it, and while rules name it, listed in `details`: campaigns not yet sent or cancelled whose rules or exclusions name it, or whose content has a block shown only to, or hidden from, its contacts (`details.campaigns`), goals not retired (`details.goals`), active or paused journeys (`details.journeys`), segments (`details.segments`), and templates (the draft or the published version) and shared blocks with such a block (`details.templates`, `details.sharedBlocks`), each listing up to 50, with `details.hasMore` when there are more. Ended journeys do not count. Consent changes keep its past changes. Every contact’s choices on the topic go with it, so agent keys are refused with 403.
 
 - Without a terminal it needs `--yes`: only for a deletion the user asked for.
 

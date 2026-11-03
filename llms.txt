@@ -27,12 +27,20 @@ Needs Node.js 22.13 or later (`node --version`).
 In a project that pins its tools, add it as a dev dependency with the project's package
 manager instead and run it as `npx kirora`.
 
+If the developer works from a source checkout of the CLI instead, build it there with
+`pnpm install --frozen-lockfile && pnpm build`, and run `node dist/bin.js` from that
+directory wherever this file says `kirora`.
+
 ## Step 2: give it a key
 
 On the developer's machine, let them log in themselves; the prompt hides the key and
-checks it before saving it in the system keychain:
+checks it before saving it:
 
     kirora login
+
+The key goes in the macOS Keychain or Linux Secret Service when there is one. Otherwise,
+including on Windows, it is saved as plain text in `~/.config/kirora/config.json`
+(owner-only on Unix). The login's message says which; tell the developer if it's the file.
 
 Don't type the key for them. If they already have it in their environment, this saves it
 without it appearing in the command:

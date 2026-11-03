@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readdir, stat, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { ReadableStream } from 'node:stream/web';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
@@ -15,6 +15,7 @@ import {
   listeningPort,
   tempDir,
   webhookCreated,
+  writeConfig,
 } from './helpers.js';
 
 const CALLER = { workspace: { name: 'Acme' }, apiKey: { name: 'CI' } };
@@ -122,7 +123,10 @@ describe('kirora CLI', () => {
     ];
     expect(await runCli(login, io)).toBe(0);
     expect(output.stdout).toContain('Logged in to Acme');
-    expect((await stat(configPath(io.env))).mode & 0o777).toBe(0o600);
+    // Windows has no permission bits to check: every file reads as 0o666.
+    if (process.platform !== 'win32') {
+      expect((await stat(configPath(io.env))).mode & 0o777).toBe(0o600);
+    }
 
     expect(await runCli(['lists', 'list'], io)).toBe(0);
     const [url, init] = fetch.mock.calls[1]!;
@@ -220,8 +224,7 @@ describe('kirora CLI', () => {
 
   it('refuses a config file that is not a saved set of logins', async () => {
     const { io, output } = await fakeIo(() => undefined);
-    await mkdir(dirname(configPath(io.env)), { recursive: true });
-    await writeFile(configPath(io.env), '{"profiles":{"default":{"apiKey":7}}}');
+    await writeConfig(io.env, { profiles: { default: { apiKey: 7 } } });
 
     expect(await runCli(['lists', 'list'], io)).toBe(1);
 
@@ -508,8 +511,12 @@ describe('kirora CLI', () => {
 
     expect(await runCli(['--help'], io)).toBe(0);
 
-    const paths = output.stdout.match(/\/\S+\.(?:txt|md)/g) ?? [];
-    expect(paths.map((path) => path.split('/').at(-1))).toEqual(['llms.txt', 'SKILL.md']);
+    // Absolute paths: /… on Unix, C:\… on Windows.
+    const paths = output.stdout.match(/(?:[A-Za-z]:)?[\\/]\S+\.(?:txt|md)/g) ?? [];
+    expect(paths.map((path) => path.split(/[\\/]/).at(-1))).toEqual([
+      'llms.txt',
+      'SKILL.md',
+    ]);
     for (const path of paths) expect(existsSync(path)).toBe(true);
   });
 
@@ -787,6 +794,196 @@ describe('kirora CLI', () => {
     });
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(await runCli(['auth', 'switch', 'staging'], io)).toBe(1);
+  });
+
+  it('refuses a saved profile with a blank key, rather than use KIRORA_API_KEY', async () => {
+    for (const profile of [{ apiKey: '' }, { apiKey: '  ' }, { keychain: '' }]) {
+      const { io, fetch, output } = await fakeIo(
+        () => Response.json({ data: CALLER }),
+        KEY,
+      );
+      await writeConfig(io.env, { profiles: { staging: profile } });
+
+      expect(await runCli(['--profile', 'staging', 'whoami'], io)).toBe(1);
+      expect(JSON.parse(output.stderr)).toMatchObject({
+        error: { code: 'CONFIG_INVALID' },
+      });
+      expect(fetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it('refuses a blank key from the keychain, and still takes KIRORA_API_KEY alone', async () => {
+    const { io, fetch, output, keychain } = await fakeIo(
+      () => Response.json({ data: CALLER }),
+      KEY,
+    );
+    await writeConfig(io.env, { profiles: { staging: { keychain: 'staging.1' } } });
+    keychain.secrets.set('staging.1', '');
+
+    expect(await runCli(['--profile', 'staging', 'whoami'], io)).toBe(1);
+    expect(JSON.parse(output.stderr)).toMatchObject({ error: { code: 'KEY_NOT_FOUND' } });
+    expect(fetch).not.toHaveBeenCalled();
+
+    expect(await runCli(['whoami'], io)).toBe(0);
+    expect(fetch.mock.calls[0]![1]?.headers).toMatchObject({
+      authorization: 'Bearer kirora_env',
+    });
+  });
+
+  const askingToDelete = async () => {
+    const { io } = await fakeIo(() => new Response(null, { status: 204 }), KEY);
+    const confirm = vi.fn(async (_message: string) => true);
+    return { io: { ...io, interactive: true, confirm }, confirm };
+  };
+
+  it('names every id, however given, and the workspace when asking to delete', async () => {
+    const { io, confirm } = await askingToDelete();
+    const named = [
+      '--workspace',
+      'tenant-b',
+      'contacts',
+      'installations',
+      'delete',
+      '--external-installation-id',
+      'device-9',
+      'contact-42',
+    ];
+    expect(await runCli(named, io)).toBe(0);
+    expect(confirm).toHaveBeenCalledWith(
+      "Run kirora contacts installations delete (DELETE /v1/contacts/contact-42/installations/device-9) in workspace tenant-b with KIRORA_API_KEY? It can't be undone.",
+    );
+  });
+
+  it('refuses a delete without --yes before looking for a key, naming its target', async () => {
+    const { io, fetch, output } = await fakeIo(() => undefined);
+    const secrets = vi.fn(io.secrets);
+
+    const args = ['lists', 'rm', 'group-1'];
+    expect(await runCli(args, { ...io, secrets })).toBe(1);
+
+    // Not NOT_LOGGED_IN: without a login, the answer is still to add --yes.
+    expect(JSON.parse(output.stderr).error).toMatchObject({
+      code: 'CONFIRMATION_REQUIRED',
+      message: expect.stringContaining('(DELETE /v1/lists/group-1)'),
+    });
+    expect(secrets).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('counts what a batch delete names, without printing it', async () => {
+    const { io, confirm } = await askingToDelete();
+    const batch = ['suppressions', 'delete', '--emails', 'a@x.io', 'b@x.io'];
+    expect(await runCli(batch, io)).toBe(0);
+    const [question] = confirm.mock.calls[0]!;
+    expect(question).toContain('(POST /v1/suppressions/delete for 2 emails)');
+    expect(question).not.toContain('a@x.io');
+  });
+
+  it('names the saved profile a delete would use when asking', async () => {
+    const { io: saved, fetch } = await fakeIo(() => Response.json({ data: CALLER }));
+    const confirm = vi.fn(async (_message: string) => false);
+    expect(await runCli(['login', '--profile', 'staging'], saved)).toBe(0);
+    const remove = ['--profile', 'staging', 'lists', 'rm', 'group-1'];
+    expect(await runCli(remove, { ...saved, interactive: true, confirm })).toBe(1);
+    expect(confirm.mock.calls[0]![0]).toContain(
+      '(DELETE /v1/lists/group-1) with profile staging',
+    );
+    // Only the login's own check: nothing was deleted.
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('waits for stdout to take each item before fetching the next page', async () => {
+    const page = (n: number) =>
+      Response.json({
+        data: [{ id: `item-${n}` }],
+        meta: { pagination: { limit: 1, nextCursor: n < 3 ? `page-${n + 1}` : null } },
+      });
+    const { io, fetch, output } = await fakeIo(
+      (url) => page(Number(url.searchParams.get('cursor')?.slice(5) ?? 1)),
+      KEY,
+    );
+    const written: string[] = [];
+    let drain: () => void = () => {};
+    io.stdout = (text) =>
+      new Promise((resolve) => {
+        written.push(text);
+        drain = resolve;
+      });
+
+    const listing = runCli(['contacts', 'list', '--paginate'], io);
+    await vi.waitFor(() => expect(written, output.stderr).toHaveLength(1));
+    // Stdout is full until drain(): no other page is asked for.
+    expect(fetch).toHaveBeenCalledOnce();
+
+    for (let n = 2; n <= 3; n++) {
+      drain();
+      await vi.waitFor(() => expect(written).toHaveLength(n));
+    }
+    drain();
+    expect(await listing).toBe(0);
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('cancels a forward still waiting on the handler when listening stops', async () => {
+    let forwardSignal: AbortSignal | undefined;
+    const { io, output, interrupt } = await fakeIo((url, init) => {
+      if (url.host === 'handler.example') {
+        forwardSignal = init.signal ?? undefined;
+        return hangUntilAborted(init);
+      }
+      return init.method === 'POST'
+        ? webhookCreated('wh-9')
+        : new Response(null, { status: 204 });
+    }, KEY);
+    const listening = runCli(
+      [...LISTEN, '--forward-to', 'http://handler.example/hooks'],
+      io,
+    );
+    const port = await listeningPort(output);
+    const delivered = deliver(
+      port,
+      JSON.stringify({ eventType: 'message.delivered', eventId: 'ev-1' }),
+    ).catch(() => 'closed');
+    await vi.waitFor(() => expect(forwardSignal).toBeDefined());
+
+    interrupt();
+    expect(await listening).toBe(0);
+
+    expect(forwardSignal!.aborted).toBe(true);
+    // Printed before listen returned, not after.
+    expect(JSON.parse(output.stdout)).toMatchObject({
+      forwarded: {
+        url: 'http://handler.example/hooks',
+        error: 'cancelled: listening stopped',
+      },
+    });
+    await delivered;
+  });
+
+  it('escapes control characters in names it prints after a login', async () => {
+    const caller = {
+      workspace: { name: 'Acme\u001b[2J\u009b31m' },
+      apiKey: { name: 'CI\u0007\r\nLogged in to Evil' },
+    };
+    const { io, output } = await fakeIo(() => Response.json({ data: caller }));
+
+    expect(await runCli(['login'], io)).toBe(0);
+
+    // C1 controls too: U+009B is CSI on its own in an 8-bit terminal.
+    expect(output.stdout).not.toMatch(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/);
+    expect(output.stdout.trimEnd()).not.toContain('\n');
+    expect(output.stdout).toContain(
+      'Acme\\u001b[2J\\u009b31m with the key "CI\\u0007\\u000d\\u000aLogged',
+    );
+  });
+
+  // pnpm check:package checks the links in the docs the package ships.
+  it('installs as llms.txt says, the same way as the README', () => {
+    const read = (path: string) =>
+      readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+    const install = (text: string) => /^\s*(npm install -g \S+)$/m.exec(text)?.[1];
+    expect(install(read('llms.txt'))).toBeDefined();
+    expect(install(read('llms.txt'))).toBe(install(read('README.md')));
   });
 });
 

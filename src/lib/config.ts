@@ -107,10 +107,15 @@ function checkConfig(config: unknown, path: string): asserts config is StoredCon
   ) {
     throw invalidConfig(path, '"keysToDelete" is not a list of keychain accounts');
   }
+  // A blank key would reach the library as no key, which then reads KIRORA_API_KEY:
+  // a command naming this profile would run with another key.
+  const isFilled = (value: unknown) => typeof value === 'string' && value.trim() !== '';
   for (const [name, profile] of Object.entries(config.profiles)) {
     const valid =
       isObject(profile) &&
-      (typeof profile.apiKey === 'string') !== (typeof profile.keychain === 'string') &&
+      (profile.apiKey === undefined) !== (profile.keychain === undefined) &&
+      (profile.apiKey === undefined || isFilled(profile.apiKey)) &&
+      (profile.keychain === undefined || isFilled(profile.keychain)) &&
       isText(profile.baseUrl) &&
       isText(profile.workspace);
     if (!valid) throw invalidConfig(path, `profile "${name}" isn't a saved login`);
@@ -295,7 +300,7 @@ export async function resolveCredentials(
   if (stored?.keychain !== undefined) {
     const store = await secrets();
     const apiKey = await store?.get(stored.keychain);
-    if (apiKey === undefined) throw keyNotFound(name);
+    if (!apiKey?.trim()) throw keyNotFound(name);
     const { keychain: _, ...rest } = stored;
     return { profile: { ...rest, apiKey }, profileName: name, storage: 'keychain' };
   }

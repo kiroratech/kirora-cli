@@ -12,8 +12,8 @@ dependencies:
     specifier: ^5.2.3
     version: 5.2.3(@types/node@22.0.0)
   '@kirora/node':
-    specifier: link:../node-sdk
-    version: link:../node-sdk
+    specifier: ^0.1.0
+    version: 0.1.0
   commander:
     specifier: ^15.0.0
     version: 15.0.0
@@ -385,6 +385,11 @@ packages:
   /@jridgewell/sourcemap-codec@1.6.0:
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
     dev: true
+
+  /@kirora/node@0.1.0:
+    resolution: {integrity: sha512-ZB7GCupYgbTn1RHItbhalYkXU50/+IgZ1UZEIvAlODlTZN3yzirlt6jfIeertC1Fll+3QLa6MaVWtzR5rfGBFQ==}
+    engines: {node: '>=20.3'}
+    dev: false
 
   /@napi-rs/lzma-linux-x64-gnu@1.5.1:
     resolution: {integrity: sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==}

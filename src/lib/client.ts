@@ -30,10 +30,15 @@ export async function clientFor(
     // Always given: without one the library reads KIRORA_BASE_URL, which the CLI doesn't
     // document and a shell may set for something else.
     baseUrl: profile.baseUrl ?? DEFAULT_API_URL,
-    workspace: workspace ?? profile.workspace,
+    workspace: workspaceFor(profile, workspace),
     fetch,
     appInfo: { name: 'kirora-cli', version: VERSION },
   });
+}
+
+/** The workspace a request acts in: `workspace` (--workspace) over the profile's own. */
+export function workspaceFor(profile: Profile, workspace: string | undefined) {
+  return workspace ?? profile.workspace;
 }
 
 /** Fetches the workspace and API key that `profile`'s key belongs to. */

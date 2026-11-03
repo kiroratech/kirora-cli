@@ -46,7 +46,7 @@ Body fields only --data can carry (* required):
 
 Examples:
   Cart to order:
-    $ kirora reports funnel -d '{"from":"2026-09-01","to":"2026-10-01","steps":[{"eventName":"Cart Abandoned"},{"eventName":"Order Completed","where":[{"property":"total","operator":"gte","value":20}]}],"withinDays":7}'
+    $ kirora reports funnel -d '{"from":"2026-09-01","to":"2026-10-01","steps":[{"eventName":"Cart Abandoned"},{"eventName":"Order Completed","where":[{"property":"total","operator":"gte","value":"20"}]}],"withinDays":7}'
 
 API reference: https://kirora.io/docs/api/reference/getFunnelReport
 ```
