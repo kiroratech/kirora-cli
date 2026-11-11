@@ -261,6 +261,13 @@ Run `kirora doctor` to check setup and API access, and `whoami` to confirm
 the selected workspace and credential source. An access failure may mean the key
 lacks the scope shown in the command's `--help`.
 
+A send refused with `SENDING_REVIEW_REQUIRED` is waiting for Kirora to review your
+sending domain. Fill in the workspace's sending profile with `kirora workspaces update`
+(`--website`, `--mail-kind`, `--contact-opt-in`): the review is asked for on its own
+once the domain is verified and the profile is complete. After a decline, change what
+`review.declineReason` names in `kirora sending-domains get <id>`, then run
+`kirora sending-domains request-review <id>`.
+
 When reporting a problem, include the CLI version, command, error code, and request ID
 if available. Remove API keys and personal data before sharing logs.
 

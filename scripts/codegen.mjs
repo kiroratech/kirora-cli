@@ -86,15 +86,15 @@ const ACTION_ALIASES = {
   deleteContacts: 'delete-many',
 };
 
+/** The schema a `$ref` points to, with any keys written beside the `$ref` over it. */
 const deref = (schema) => {
-  let resolved = schema;
-  while (resolved?.$ref) {
-    resolved = resolved.$ref
-      .split('/')
-      .slice(1)
-      .reduce((node, key) => node[key], spec);
-  }
-  return resolved ?? {};
+  if (!schema?.$ref) return schema ?? {};
+  const { $ref, ...siblings } = schema;
+  const target = $ref
+    .split('/')
+    .slice(1)
+    .reduce((node, key) => node[key], spec);
+  return { ...deref(target), ...siblings };
 };
 
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
@@ -165,20 +165,27 @@ function field(name, schema, description, required) {
 }
 
 /**
- * The shapes a value can take, null left out: each of an `anyOf` or `oneOf`, or each of
- * the types a `type` list names (`["string", "null"]` is a string).
+ * The shapes a value can take, null among them: each of an `anyOf` or `oneOf`, or each
+ * of the types a `type` list names (`["string", "null"]` is a string or null).
  */
-function variantsOf(schema) {
+function shapesOf(schema) {
   const resolved = deref(schema);
   const alternatives = resolved.anyOf ?? resolved.oneOf;
-  if (alternatives) return alternatives.flatMap(variantsOf);
+  if (alternatives) return alternatives.flatMap(shapesOf);
   if (Array.isArray(resolved.type)) {
-    return resolved.type
-      .filter((type) => type !== 'null')
-      .map((type) => ({ ...resolved, type }));
+    return resolved.type.map((type) => ({ ...resolved, type }));
   }
-  return resolved.type === 'null' ? [] : [resolved];
+  return [resolved];
 }
+
+const isNull = (shape) => shape.type === 'null';
+
+/** The shapes a value can take, null left out. */
+const variantsOf = (schema) => shapesOf(schema).filter((shape) => !isNull(shape));
+
+/** Whether `null` is one of the values a schema takes. */
+const allowsNull = (schema) =>
+  deref(schema).nullable === true || shapesOf(schema).some(isNull);
 
 /** A value's shape in one line of help: `text`, `"a" | "b"`, `{ to*, email }`, `one of …`. */
 function shapeOf(schema) {
@@ -197,10 +204,12 @@ function shapeOf(schema) {
     const required = new Set(variant.required ?? []);
     const keys = Object.entries(variant.properties).map(([key, property]) => {
       const name = required.has(key) ? `${key}*` : key;
-      // A key with one possible value, such as a union's `type`, says which shape it is.
-      const { const: value, enum: choices } = deref(property);
-      const only = value ?? (choices?.length === 1 ? choices[0] : undefined);
-      return only === undefined ? name : `${name}: ${JSON.stringify(only)}`;
+      // A key with set values names them: a union's `type` says which shape it is, and
+      // the rest let a body be written from help.
+      const fixed = variantsOf(property).every(
+        (each) => each.enum || each.const !== undefined,
+      );
+      return fixed ? `${name}: ${shapeOf(property)}` : name;
     });
     return `{ ${keys.join(', ')} }`;
   }
@@ -256,7 +265,13 @@ function helpText(resource, operation, apiOperation) {
           [
             'Body fields only --data can carry (* required):',
             ...fields.flatMap(([name, property]) => {
-              const about = firstSentence(deref(property).description);
+              const { description, default: fallback } = deref(property);
+              const about = [
+                firstSentence(description),
+                fallback !== undefined && `Default: ${JSON.stringify(fallback)}.`,
+              ]
+                .filter(Boolean)
+                .join(' ');
               return [
                 `  ${label(name).padEnd(width)}  ${shapeOf(property)}`,
                 ...(about ? [`  ${' '.repeat(width)}  ${about}`] : []),
@@ -301,13 +316,21 @@ function helpText(resource, operation, apiOperation) {
 
 function bodyFields(operation) {
   if (!operation.requestBody) return undefined;
-  const [content] = Object.values(deref(operation.requestBody).content);
+  const [[type, content]] = Object.entries(deref(operation.requestBody).content);
   const schema = deref(content.schema);
   const required = new Set(schema.required ?? []);
   return Object.entries(schema.properties ?? {})
-    .map(([name, property]) =>
-      field(name, property, deref(property).description, required.has(name)),
-    )
+    .map(([name, property]) => {
+      const each = field(name, property, deref(property).description, required.has(name));
+      // Only a JSON body can carry null, which `--no-<flag>` sends to clear the value. A
+      // boolean's `--no-<flag>` already means false.
+      const nullable =
+        each &&
+        type === 'application/json' &&
+        each.kind !== 'boolean' &&
+        allowsNull(property);
+      return nullable ? { ...each, nullable: true } : each;
+    })
     .filter(Boolean);
 }
 
@@ -426,7 +449,11 @@ const output = [...byResource.entries()]
       ).join(' ');
       const fields = [...query, ...(body ?? [])];
       const flags = [
-        ...fields.flatMap((each) => [each.flag, ...(each.alias ? [each.alias] : [])]),
+        ...fields.flatMap((each) => [
+          each.flag,
+          ...(each.alias ? [each.alias] : []),
+          ...(each.nullable || each.kind === 'boolean' ? [`no-${each.flag}`] : []),
+        ]),
         ...(pathParams.length > 1 ? pathParams.map((each) => each.label) : []),
       ];
       flags
@@ -589,7 +616,7 @@ function referencePage(resource) {
         const flag =
           field.kind === 'boolean'
             ? `\`--${field.flag}\`, \`--no-${field.flag}\``
-            : `\`--${field.flag} ${field.placeholder}\``;
+            : `\`--${field.flag} ${field.placeholder}\`${field.nullable ? `, \`--no-${field.flag}\` (clears it)` : ''}`;
         const about = [
           field.required ? '**Required.**' : '',
           (field.description ?? '').replaceAll('|', '\\|'),

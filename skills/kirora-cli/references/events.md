@@ -14,7 +14,7 @@ Adds a name to the catalogue before the app sends it, so a journey, segment or g
 
 | Flag | |
 | --- | --- |
-| `--description <value>` | **Required.** What the event means, at most 255 characters: shown in the lists and pickers, and read by Kiro. `null` removes it. |
+| `--description <value>`, `--no-description` (clears it) | **Required.** What the event means, at most 255 characters: shown in the lists and pickers, and read by Kiro. `null` removes it. |
 
 ```text
 Examples:

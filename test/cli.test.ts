@@ -632,6 +632,33 @@ describe('kirora CLI', () => {
     });
   });
 
+  it('clears a field the API lets be null with --no-<flag>', async () => {
+    const { io, printed } = await fakeIo(() => undefined);
+
+    const update = ['journeys', 'update', 'jrn_1', '--dry-run'];
+    expect(await printed([...update, '--no-min-hours-between-sends'])).toMatchObject({
+      request: { body: { minHoursBetweenSends: null } },
+    });
+    expect(await printed([...update, '--min-hours-between-sends', '24'])).toMatchObject({
+      request: { body: { minHoursBetweenSends: 24 } },
+    });
+    expect(
+      await printed(['workspaces', 'update', 'ws_1', '--no-website', '--dry-run']),
+    ).toMatchObject({ request: { body: { website: null } } });
+    // A field the API needs a value for has no --no-<flag>.
+    expect(await runCli([...update, '--no-expected-revision'], io)).toBe(2);
+  });
+
+  it('asks for a sending domain review again', async () => {
+    const { printed } = await fakeIo(() => undefined);
+
+    expect(
+      await printed(['sending-domains', 'request-review', 'dom_1', '--dry-run']),
+    ).toMatchObject({
+      request: { method: 'POST', path: '/v1/sending-domains/dom_1/review' },
+    });
+  });
+
   it('says a dry run of --paginate would follow every page', async () => {
     const { printed } = await fakeIo(() => undefined);
 

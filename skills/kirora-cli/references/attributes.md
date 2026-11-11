@@ -14,7 +14,7 @@ Sets what an attribute key means, in the workspace's words, or removes it with `
 
 | Flag | |
 | --- | --- |
-| `--description <value>` | **Required.** What the key means, at most 255 characters: shown in the Data index's attribute list, and read by Kiro. `null` removes it. |
+| `--description <value>`, `--no-description` (clears it) | **Required.** What the key means, at most 255 characters: shown in the Data index's attribute list, and read by Kiro. `null` removes it. |
 
 ```text
 Examples:

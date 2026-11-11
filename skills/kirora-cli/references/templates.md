@@ -8,7 +8,7 @@ A template is a reusable email design: a document of blocks and a theme, saved a
 
 Create an email template. `POST /v1/templates`, needs `templates:write`.
 
-Creates a reusable email and publishes it as version 1, so a transactional send can use it at once by its `id` or `alias`. An agent key's template stays a draft until a person publishes it.
+Creates a reusable email and publishes it as version 1, so a transactional send can use it at once by its `id` or `alias`. An agent key's template stays a draft until a person publishes it. So does a design with a button or video that has no working link, or a shared block linking to a placeholder address: it is saved with `publishedVersion` null, and publishing it answers what to fix.
 
 - `-d, --data` takes the whole JSON body; flags set fields on top.
 - `--idempotency-key`: reuse the same key to retry safely.
@@ -105,7 +105,7 @@ API reference: https://kirora.io/docs/api/reference/listTemplates
 
 Publish a template. `POST /v1/templates/{id}/publish`, needs `templates:write`.
 
-Makes the draft, its `transactionalDefaults` included, the next version, which transactional sends of the template use from then on, with the brand and shared blocks as they are now. When the draft matches the published version and neither has changed, it publishes nothing and returns the template unchanged. Agent keys are refused with 403: a person publishes.
+Makes the draft, its `transactionalDefaults` included, the next version, which transactional sends of the template use from then on, with the brand and shared blocks as they are now. When the draft matches the published version and neither has changed, it publishes nothing and returns the template unchanged. A button or video with no working link is refused (`DRAFT_INCOMPLETE`, naming each one). Agent keys are refused with 403: a person publishes.
 
 - `--idempotency-key`: reuse the same key to retry safely.
 
@@ -130,6 +130,7 @@ Renders a saved template to the subject, HTML and plain text a recipient would g
 ```text
 Body fields only --data can carry (* required):
   contact  one of { contactId* } | { externalId* } | { email* }
+           A contact whose values fill the merge tags and decide each block's `visibleIf`.
   data     object
            Sample data for `{{ event.properties.* }}` tags and repeat lists: what a transactional send's `data` or a journey's event would carry.
 
@@ -153,7 +154,7 @@ Renders a block tree and theme sent in the request, or an email written as HTML 
 ```text
 The body (--data) is one of:
   { kind: "design", schemaVersion, blocks*, theme, language, plainTextOverride, contact, subject, data }
-  { kind*: "html", html*, context, plainTextOverride, contact, subject, data }
+  { kind*: "html", html*, context: "marketing" | "transactional", plainTextOverride, contact, subject, data }
 
 Examples:
   Render a design for one contact without saving it:
@@ -168,7 +169,7 @@ API reference: https://kirora.io/docs/api/reference/renderTemplateContent
 
 Send a test email. `POST /v1/templates/test-send`, needs `templates:write`.
 
-Sends the design or HTML in the request to one workspace member who has accepted their invitation; call once per recipient. Pass `contact` to render merge tags as that contact would see them. The test comes from `from`, or the workspace's default sender, on a verified sending domain: there is no shared sender, so a workspace sends tests once its own domain is verified (`SENDING_DOMAIN_UNVERIFIED` before then). Nothing is recorded as a message. An embed session may call this too: a session lets the chosen builders read what they need, render previews, count audiences, upload images and, when `testSendTo` lists addresses, send test emails to those addresses only. It never saves, publishes or sends anything else; your server saves what the builders return. From a session, the test goes only to an address its `testSendTo` names, instead of to a workspace member (400 `VALIDATION_ERROR` for any other).
+Sends the design or HTML in the request to one workspace member who has accepted their invitation; call once per recipient. Pass `contact` to render merge tags as that contact would see them. The test comes from `from`, or the workspace's default sender, on a verified sending domain: there is no shared sender, so a workspace sends tests once its own domain is verified (`SENDING_DOMAIN_UNVERIFIED` before then). A design with a button or video that has no working link is refused (`DRAFT_INCOMPLETE`, naming each one). Nothing is recorded as a message. An embed session may call this too: a session lets the chosen builders read what they need, render previews, count audiences, upload images and, when `testSendTo` lists addresses, send test emails to those addresses only. It never saves, publishes or sends anything else; your server saves what the builders return. From a session, the test goes only to an address its `testSendTo` names, instead of to a workspace member (400 `VALIDATION_ERROR` for any other).
 
 - `-d, --data` takes the whole JSON body; flags set fields on top.
 - `--idempotency-key`: reuse the same key to retry safely.
@@ -176,7 +177,7 @@ Sends the design or HTML in the request to one workspace member who has accepted
 ```text
 The body (--data) is one of:
   { kind: "design", schemaVersion, blocks*, theme, language, plainTextOverride, contact, subject*, data, from, to* }
-  { kind*: "html", html*, context, plainTextOverride, contact, subject*, data, from, to* }
+  { kind*: "html", html*, context: "marketing" | "transactional", plainTextOverride, contact, subject*, data, from, to* }
 
 Examples:
   Send a draft to a workspace member, filled in for one contact:
@@ -199,16 +200,17 @@ Edits the template's draft: a design's blocks, or an HTML template's `html`; a t
 | `--schema-version <number>` | The block format version. A design only. |
 | `--language <value>` | The email's language. A design only: an HTML template's `<html lang>` says it. |
 | `--html <value>` | The whole email. An HTML template only: the kind never changes. |
-| `--plain-text-override <value>` | Plain text sent instead of the version generated from the design or HTML; `null` clears it. |
-| `--alias <value>` | Unique in the workspace; a transactional send may name the template by it in `email.template`. Null clears it. |
+| `--plain-text-override <value>`, `--no-plain-text-override` (clears it) | Plain text sent instead of the version generated from the design or HTML; `null` clears it. |
+| `--alias <value>`, `--no-alias` (clears it) | Unique in the workspace; a transactional send may name the template by it in `email.template`. Null clears it. |
 | `--tags <values...>` | Replaces the tags whole (`[]` removes them), matched without case. Changing only the tags needs no publish and no confirmation: they change nothing sent. |
 | `--expected-revision <number>` | The `revision` you read. When it is no longer current the update is refused with 409 `REVISION_CONFLICT`, whose details carry the current revision, `updatedAt` and who made the change. Omit it to overwrite whatever is there. |
 
 ```text
 Body fields only --data can carry (* required):
-  blocks                 list of one of { id*, type*: "header", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: "heading", style, visibleIf, visibleIfPresent, showOn, text, size, align, weight } | { id*, type*: "text", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: "image", style, visibleIf, visibleIfPresent, showOn, src, alt, width, align, href } | { id*, type*: "button", style, visibleIf, visibleIfPresent, showOn, text, href, align, fullWidth, color, buttonStyle } | { id*, type*: "divider", style, visibleIf, visibleIfPresent, showOn, thickness, color, lineStyle, width, align } | { id*, type*: "spacer", style, visibleIf, visibleIfPresent, showOn, size } | { id*, type*: "columns", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: "columns3", style, visibleIf, visibleIfPresent, showOn, widths, valign, stackOnMobile, columns* } | { id*, type*: "imagetext", style, visibleIf, visibleIfPresent, showOn, src, alt, text, side } | { id*, type*: "imagegroup", style, visibleIf, visibleIfPresent, showOn, count, images } | { id*, type*: "boxed", style, visibleIf, visibleIfPresent, showOn, text, align } | { id*, type*: "quote", style, visibleIf, visibleIfPresent, showOn, text, text2 } | { id*, type*: "list", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: "product", style, visibleIf, visibleIfPresent, showOn, weight, text, text2, desc, href, src, alt } | { id*, type*: "video", style, visibleIf, visibleIfPresent, showOn, src, alt, text, href } | { id*, type*: "social", style, visibleIf, visibleIfPresent, showOn, align, links, display, iconStyle } | { id*, type*: "menu", style, visibleIf, visibleIfPresent, showOn, links, align, separator } | { id*, type*: "html", style, visibleIf, visibleIfPresent, showOn, text } | { id*, type*: "section", style, visibleIf, visibleIfPresent, showOn, backgroundImage, blocks* } | { id*, type*: "footer", style, text, locked: true, align, unsubscribeLink, unsubscribeLabel } | { id*, type*: "repeat", style, visibleIf, visibleIfPresent, showOn, list*, limit, blocks* } | { id*, type*: "shared", style, visibleIfPresent, showOn, sharedBlockId*, override }
+  blocks                 list of one of { id*, type*: "header", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", src, alt, width, align: "left" | "center" | "right", href } | { id*, type*: "heading", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", text, size: "28px" | "22px" | "18px", align: "left" | "center" | "right", weight: "regular" | "bold" } | { id*, type*: "text", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", text, align: "left" | "center" | "right" } | { id*, type*: "image", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", src, alt, width, align: "left" | "center" | "right", href } | { id*, type*: "button", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", text, href, align: "left" | "center" | "right", fullWidth, color, buttonStyle: "solid" | "outline" } | { id*, type*: "divider", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", thickness, color, lineStyle: "solid" | "dashed" | "dotted", width: "100%" | "75%" | "50%" | "25%", align: "left" | "center" | "right" } | { id*, type*: "spacer", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", size } | { id*, type*: "columns", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", widths, valign: "top" | "middle" | "bottom", stackOnMobile, columns* } | { id*, type*: "columns3", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", widths, valign: "top" | "middle" | "bottom", stackOnMobile, columns* } | { id*, type*: "imagetext", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", src, alt, text, side: "left" | "right" } | { id*, type*: "imagegroup", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", count: one of 2 | 3, images } | { id*, type*: "boxed", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", text, align: "left" | "center" | "right" } | { id*, type*: "quote", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", text, text2 } | { id*, type*: "list", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", text } | { id*, type*: "product", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", weight: "regular" | "bold", text, text2, desc, href, src, alt } | { id*, type*: "video", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", src, alt, text, href } | { id*, type*: "social", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", align: "left" | "center" | "right", links, display: "icons" | "both" | "text", iconStyle: "color" | "dark" | "light" } | { id*, type*: "menu", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", links, align: "left" | "center" | "right", separator: "none" | "bar" | "dot" } | { id*, type*: "html", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", text } | { id*, type*: "section", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", backgroundImage, blocks* } | { id*, type*: "footer", style, text, locked: true, align: "left" | "center" | "right", unsubscribeLink, unsubscribeLabel } | { id*, type*: "repeat", style, visibleIf, visibleIfPresent, showOn: "mobile" | "desktop", list*, limit, blocks* } | { id*, type*: "shared", style, visibleIfPresent, showOn: "mobile" | "desktop", sharedBlockId*, override }
                          The blocks.
-  theme                  { bodyFontFamily, headingFontFamily, cardBackgroundColor, canvasBackgroundColor, textColor, accentColor, linkColor, headingColor, buttonTextColor, baseFontSize, cardWidth, cardBorderRadius, buttonBorderRadius, buttonStyle }
+  theme                  { bodyFontFamily, headingFontFamily, cardBackgroundColor, canvasBackgroundColor, textColor, accentColor, linkColor, headingColor, buttonTextColor, baseFontSize: "14px" | "15px" | "16px" | "17px" | "18px", cardWidth: "560px" | "600px" | "680px", cardBorderRadius: "0px" | "6px" | "12px" | "16px" | "24px" | "999px", buttonBorderRadius: "0px" | "6px" | "12px" | "16px" | "24px" | "999px", buttonStyle: "solid" | "outline" }
+                         Theme values this email overrides.
   transactionalDefaults  { subject, previewText, from, replyTo }
                          The subject, preview text and sender a transactional send of this template uses unless the send gives its own; campaigns and journeys set their own.
 
@@ -252,7 +254,7 @@ API reference: https://kirora.io/docs/api/reference/listTemplateVersions
 
 Restore a template version. `POST /v1/templates/{id}/versions/{version}/restore`, needs `templates:write`.
 
-Replaces the draft with that version's content and `transactionalDefaults`, discarding unpublished changes, and publishes it as the next version, so the history records the rollback (nothing new when it is already the live content). Agent keys are refused with 403.
+Replaces the draft with that version's content and `transactionalDefaults`, discarding unpublished changes, and publishes it as the next version, so the history records the rollback (nothing new when it is already the live content). A version with a button or video that has no working link is refused (`DRAFT_INCOMPLETE`). Agent keys are refused with 403.
 
 - Each id is an argument, in order, or a flag: `--template-id`, `--template-version`.
 - `--idempotency-key`: reuse the same key to retry safely.

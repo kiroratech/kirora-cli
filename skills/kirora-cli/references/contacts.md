@@ -119,22 +119,24 @@ Creates or updates a contact, matched by `externalId`, then `email`, then `phone
 
 | Flag | |
 | --- | --- |
-| `--external-id <id>` | Your own id for the contact, up to 255 characters. Identify matches on it first. |
-| `--email <email>` |  |
-| `--first-name <value>` |  |
-| `--last-name <value>` |  |
-| `--phone <value>` | Phone number; normalised to E.164 (a leading `+` and country code). |
-| `--timezone <value>` | IANA timezone, e.g. `Europe/London`; used for send-time scheduling. |
-| `--country <value>` | ISO 3166-1 alpha-2 code. Omitted, it is inferred from the phone, else the timezone. |
-| `--locale <value>` | BCP 47 tag (`fr`, `fr-CA`), stored canonical: the language the contact reads, and how merge tags format numbers, dates and money for them. |
+| `--external-id <id>`, `--no-external-id` (clears it) | Your own id for the contact, up to 255 characters. Identify matches on it first. |
+| `--email <email>`, `--no-email` (clears it) |  |
+| `--first-name <value>`, `--no-first-name` (clears it) |  |
+| `--last-name <value>`, `--no-last-name` (clears it) |  |
+| `--phone <value>`, `--no-phone` (clears it) | Phone number; normalised to E.164 (a leading `+` and country code). |
+| `--timezone <value>`, `--no-timezone` (clears it) | IANA timezone, e.g. `Europe/London`; used for send-time scheduling. |
+| `--country <value>`, `--no-country` (clears it) | ISO 3166-1 alpha-2 code. Omitted, it is inferred from the phone, else the timezone. |
+| `--locale <value>`, `--no-locale` (clears it) | BCP 47 tag (`fr`, `fr-CA`), stored canonical: the language the contact reads, and how merge tags format numbers, dates and money for them. |
 | `--lists <values...>` | Names of lists to add the contact to, up to 20, matched without case; a list the workspace lacks is created. Adds only: the contact stays in the lists it is already in. |
 
 ```text
 Body fields only --data can carry (* required):
   dates       object
+              Named calendar dates, merged key by key; `null` removes one.
   attributes  object
               Custom attributes, merged key by key; `null` removes one.
   consent     { email, push, statement }
+              Consent on each channel, and how the contact agreed.
   topics      object
               Topic choices keyed by topic id, at most 50, as `PUT /v1/contacts/{id}/topics/{topicId}` sets them: `{ "subscribed": true }` for every channel, or `{ "channels": { "email": … } }` per channel.
 
@@ -219,8 +221,8 @@ Registers a device or browser subscription against a contact so push can reach i
 
 ```text
 The body (--data) is one of:
-  { pushAppId*, externalInstallationId*, permission*, targetKind*, target* }
-  { pushAppId*, externalInstallationId*, permission*, targetKind*: "web_push_subscription", subscription* }
+  { pushAppId*, externalInstallationId*, permission*: "granted" | "denied", targetKind*: "apns_token" | "fcm_token", target* }
+  { pushAppId*, externalInstallationId*, permission*: "granted" | "denied", targetKind*: "web_push_subscription", subscription* }
   { pushAppId*, externalInstallationId*, permission*: "denied", lastSeenAt* }
 
 Examples:
@@ -309,6 +311,7 @@ Merges this contact, a duplicate, into the one `keep` names, for one person reco
 ```text
 Body fields only --data can carry (* required):
   keep*  one of { contactId* } | { externalId* } | { email* }
+         The contact to keep, named one way; the contact in the path merges into it and is deleted.
 
 Examples:
   Merge an email-only duplicate into Amaka:
@@ -391,7 +394,8 @@ Joins a contact to a topic or removes them from it, in the shape identify's `top
 Body fields only --data can carry (* required):
   channels   object
              One channel's choice each, applied after `subscribed`; a channel left out keeps its choice.
-  statement  { basis*, evidence*, consentedAt, wording }
+  statement  { basis*: "opted_in" | "existing_customer", evidence*, consentedAt, wording }
+             How the contact agreed; required to join on any channel.
 
 Examples:
   Join by email, not by push:
@@ -413,21 +417,23 @@ Merges the supplied fields into an existing contact; omitted fields are left alo
 | Flag | |
 | --- | --- |
 | `--id-type <value>` | What `{id}` is: Kirora's id for the contact (`id`, the default), your own (`externalId`, as set with identify) or its email address (`email`, matched trimmed and without case). One of `id`, `externalId`, `email`. |
-| `--external-id <id>` | Your own id for the contact, up to 255 characters. Identify matches on it first. |
-| `--email <email>` |  |
-| `--first-name <value>` |  |
-| `--last-name <value>` |  |
-| `--phone <value>` | Phone number; normalised to E.164 (a leading `+` and country code). |
-| `--timezone <value>` | IANA timezone, e.g. `Europe/London`; used for send-time scheduling. |
-| `--country <value>` | ISO 3166-1 alpha-2 code. Omitted, it is inferred from the phone, else the timezone. |
-| `--locale <value>` | BCP 47 tag (`fr`, `fr-CA`), stored canonical: the language the contact reads, and how merge tags format numbers, dates and money for them. |
+| `--external-id <id>`, `--no-external-id` (clears it) | Your own id for the contact, up to 255 characters. Identify matches on it first. |
+| `--email <email>`, `--no-email` (clears it) |  |
+| `--first-name <value>`, `--no-first-name` (clears it) |  |
+| `--last-name <value>`, `--no-last-name` (clears it) |  |
+| `--phone <value>`, `--no-phone` (clears it) | Phone number; normalised to E.164 (a leading `+` and country code). |
+| `--timezone <value>`, `--no-timezone` (clears it) | IANA timezone, e.g. `Europe/London`; used for send-time scheduling. |
+| `--country <value>`, `--no-country` (clears it) | ISO 3166-1 alpha-2 code. Omitted, it is inferred from the phone, else the timezone. |
+| `--locale <value>`, `--no-locale` (clears it) | BCP 47 tag (`fr`, `fr-CA`), stored canonical: the language the contact reads, and how merge tags format numbers, dates and money for them. |
 
 ```text
 Body fields only --data can carry (* required):
   dates       object
+              Named calendar dates, merged key by key; `null` removes one.
   attributes  object
               Custom attributes, merged key by key; `null` removes one.
   consent     { email, push, statement }
+              Consent on each channel, and how the contact agreed.
 
 Examples:
   Change a name and an attribute:

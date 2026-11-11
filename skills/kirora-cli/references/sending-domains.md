@@ -76,6 +76,18 @@ Returns the sending domains in this workspace with each one's `status`. Results 
 API reference: https://kirora.io/docs/api/reference/listSendingDomains
 ```
 
+## kirora sending-domains request-review <id>
+
+Ask for a sending domain review again. `POST /v1/sending-domains/{id}/review`, needs `domains:write`.
+
+A person at Kirora reviews each sending domain before it can send, against the workspace's sending profile (`website`, `mailKind`, `contactOptIn` in workspace settings); it is asked for on its own once the domain is proven yours and the profile is filled in. Call this to ask again after a decline, once you have changed what its `review.declineReason` names. Refused with `CONFLICT` when the domain is already approved or not yet proven yours, and `VALIDATION_ERROR` while the sending profile is incomplete.
+
+- `--idempotency-key`: reuse the same key to retry safely.
+
+```text
+API reference: https://kirora.io/docs/api/reference/requestSendingDomainReview
+```
+
 ## kirora sending-domains usage <id>
 
 Retrieve a sending domain's usage. `GET /v1/sending-domains/{id}/usage`, needs `domains:read`.

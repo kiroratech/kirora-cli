@@ -88,6 +88,13 @@ An API error carries the API's own `code`, with its `status` and, for a 422, the
 | `INTERRUPTED`           | webhooks listen was stopped while its webhook was being made.         |
 | `CLI_ERROR`             | Anything else, such as a file that can’t be read.                     |
 
+A send refused with 403 `SENDING_REVIEW_REQUIRED` is waiting for Kirora to review the
+sending domain. Fill in the workspace's sending profile (`kirora workspaces update
+--website <url> --mail-kind <kind> --contact-opt-in <how>`); the review is asked for on
+its own once the domain is verified and the profile is complete. After a decline, fix
+what `review.declineReason` names (`kirora sending-domains get <id>`), then
+`kirora sending-domains request-review <id>`.
+
 ## Credentials
 
 In order: `--profile` or `KIRORA_PROFILE`; then `KIRORA_API_KEY` (with `KIRORA_API_URL`
@@ -106,6 +113,8 @@ partner key act in one tenant.
 | A retry without the first run's `--idempotency-key`                | The retry is a new request: it sends again                                                                                                                      |
 | Reading `{ "data": [...] }` from `--paginate`                      | `--paginate` prints the items themselves, one per line                                                                                                          |
 | A delete run without `--yes` failing                               | That's the guard; add `--yes` only for a deletion the user asked for                                                                                            |
+| `withinDays` in a segment rule or a funnel                         | A window is `{ "value": 90, "unit": "days" }` (unit: seconds, minutes, hours or days): `within` in a rule, `conversionWindow` in `reports funnel`'s `--data`    |
+| Clearing a field with `0`, `""` or by leaving the flag out         | A field the API lets be null has `--no-<flag>`, which sends null: `kirora journeys update <id> --no-min-hours-between-sends`                                    |
 
 ## Patterns
 

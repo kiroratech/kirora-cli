@@ -8,7 +8,7 @@ Transactional messages are one-off email or push sends to one recipient, such as
 
 Cancel a scheduled transactional message. `POST /v1/transactional/messages/{id}/cancel`, needs `transactional:send`.
 
-Stops a message sent with `sendAt` before it goes: it becomes `skipped` with `skip.reason` `cancelled`, its email or push goes back to the plan allowance, and `message.skipped` is published. Cancelling it again answers 200 with the message as it is. Once a worker has started sending it, or it went at once, the response is 409 `CONFLICT`. Agent keys are refused with 403.
+Stops a message sent with `sendAt` before it goes: it becomes `skipped` with `skip.reason` `cancelled`, its email or push goes back to the plan allowance, and `message.skipped` is published. Cancelling an email also cancels its `cc` and `bcc` copies. Cancelling it again answers 200 with the message as it is. Once a worker has started sending it, or it went at once, the response is 409 `CONFLICT`. Agent keys are refused with 403.
 
 - `--idempotency-key`: reuse the same key to retry safely.
 
@@ -35,11 +35,13 @@ Sends a one-off message to one recipient — a receipt, a password reset, a conf
 ```text
 Body fields only --data can carry (* required):
   to*    one of { contactId* } | { externalId* } | { email* }
+         Who receives it.
   data   object
          Values the content reads as `{{ data.<key> }}`: a stored template, inline email and the push `title` and `body` alike.
-  email  one of { template*, subject, previewText, from, replyTo, attachments, threading, tracking } | { subject*, previewText, html*, text, from*, replyTo, attachments, threading, tracking }
-         Inline (`subject`, `from`, `html`), or a stored template by `template`; either may carry `attachments`, `threading` and `tracking`.
-  push   { title*, body*, actionUrl, imageUrl, iconUrl, data, buttons, collapseKey, sound, badge, ttl, urgency, overrides, pushProjectId }
+  email  one of { template*, subject, previewText, from, replyTo, attachments, threading, tracking, cc, bcc } | { subject*, previewText, html*, text, from*, replyTo, attachments, threading, tracking, cc, bcc, mergeTags }
+         Inline (`subject`, `from`, `html`), or a stored template by `template`; either may carry `attachments`, `threading`, `tracking`, `cc` and `bcc`.
+  push   { title*, body*, actionUrl, imageUrl, iconUrl, data, buttons, collapseKey, sound, badge, ttl, urgency: "high" | "normal", overrides, pushProjectId }
+         A push notification to the contact's devices.
 
 Examples:
   Email from a stored template:

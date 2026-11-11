@@ -54,6 +54,7 @@ A dry run assembles the request locally; it does not verify credentials, API sco
 or every server-side validation rule.
 
 Simple fields have flags such as `--external-id`, `--sensitive`, and `--no-sensitive`.
+A field the API lets be null also has `--no-<flag>`, which clears it: `--no-website`.
 Nested objects use JSON. Path IDs are arguments; commands with multiple IDs also accept
 named flags such as `--contact-id` and `--topic-id`. Put IDs before list-valued flags:
 `--tags a b` consumes values until the next flag.

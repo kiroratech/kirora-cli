@@ -12,8 +12,8 @@ dependencies:
     specifier: ^5.2.3
     version: 5.2.3(@types/node@22.0.0)
   '@kirora/node':
-    specifier: ^0.1.0
-    version: 0.1.0
+    specifier: ^0.2.0
+    version: 0.2.0
   commander:
     specifier: ^15.0.0
     version: 15.0.0
@@ -386,8 +386,8 @@ packages:
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
     dev: true
 
-  /@kirora/node@0.1.0:
-    resolution: {integrity: sha512-ZB7GCupYgbTn1RHItbhalYkXU50/+IgZ1UZEIvAlODlTZN3yzirlt6jfIeertC1Fll+3QLa6MaVWtzR5rfGBFQ==}
+  /@kirora/node@0.2.0:
+    resolution: {integrity: sha512-LPj/QXB2Q1MOXtzvMybGW1iKK8L0ZEL7w3DnBmQWWyPG/OtO2uA9iYQwMyyfLBDVpzsUA+SVqPA32KKvk3ar/A==}
     engines: {node: '>=20.3'}
     dev: false
 

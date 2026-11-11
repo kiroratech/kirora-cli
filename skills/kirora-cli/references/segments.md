@@ -33,7 +33,7 @@ Creates a segment: an audience defined by rules. A send evaluates the rules live
 | Flag | |
 | --- | --- |
 | `--name <value>` | **Required.** Unique within the workspace. |
-| `--description <value>` | What the segment is for, up to 1,000 characters; `null` clears it. |
+| `--description <value>`, `--no-description` (clears it) | What the segment is for, up to 1,000 characters; `null` clears it. |
 | `--tags <values...>` | Tag names, up to 20, matched without case; a tag the workspace lacks is created. On update, replaces the tags whole: `[]` removes them all. |
 
 ```text
@@ -42,9 +42,9 @@ Body fields only --data can carry (* required):
 
 Examples:
   Newsletter members with no order in 90 days:
-    $ kirora segments create -d '{"name":"Lapsed customers","description":"Newsletter readers who have not ordered in 90 days, for the win-back offer","rules":{"all":[{"type":"event","name":"Order Completed","count":{"operator":"equals","value":0},"withinDays":90},{"type":"list","listIds":["0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e"],"member":true}]},"tags":["Win-back"]}'
+    $ kirora segments create -d '{"name":"Lapsed customers","description":"Newsletter readers who have not ordered in 90 days, for the win-back offer","rules":{"all":[{"type":"event","name":"Order Completed","count":{"operator":"equals","value":0},"within":{"value":90,"unit":"days"}},{"type":"list","listIds":["0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e"],"member":true}]},"tags":["Win-back"]}'
   Nested rules: premium customers with a phone, or anyone who clicked:
-    $ kirora segments create -d '{"name":"Engaged or premium","rules":{"any":[{"all":[{"type":"contact","field":"phone","operator":"exists"},{"type":"attribute","field":"attributes.plan","operator":"equals","value":"premium"}]},{"type":"activity","activity":"clicked","withinDays":30}]}}'
+    $ kirora segments create -d '{"name":"Engaged or premium","rules":{"any":[{"all":[{"type":"contact","field":"phone","operator":"exists"},{"type":"attribute","field":"attributes.plan","operator":"equals","value":"premium"}]},{"type":"activity","activity":"clicked","within":{"value":30,"unit":"days"}}]}}'
 
 API reference: https://kirora.io/docs/api/reference/createSegment
 ```
@@ -120,10 +120,11 @@ Evaluates a rule tree that has not been saved and returns how many contacts it w
 ```text
 Body fields only --data can carry (* required):
   rules*  one of { all* } | { any* }
+          The unsaved rule tree to evaluate.
 
 Examples:
   Count a rule tree before saving it:
-    $ kirora segments preview -d '{"rules":{"all":[{"type":"event","name":"Order Completed","count":{"operator":"equals","value":0},"withinDays":90},{"type":"list","listIds":["0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e"],"member":true}]}}'
+    $ kirora segments preview -d '{"rules":{"all":[{"type":"event","name":"Order Completed","count":{"operator":"equals","value":0},"within":{"value":90,"unit":"days"}},{"type":"list","listIds":["0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e"],"member":true}]}}'
 
 API reference: https://kirora.io/docs/api/reference/previewSegment
 ```
@@ -154,16 +155,17 @@ Replaces the segment's rules, renames it or changes its description. Changing ru
 | Flag | |
 | --- | --- |
 | `--name <value>` | Unique within the workspace. |
-| `--description <value>` | What the segment is for, up to 1,000 characters; `null` clears it. |
+| `--description <value>`, `--no-description` (clears it) | What the segment is for, up to 1,000 characters; `null` clears it. |
 | `--tags <values...>` | Tag names, up to 20, matched without case; a tag the workspace lacks is created. On update, replaces the tags whole: `[]` removes them all. |
 
 ```text
 Body fields only --data can carry (* required):
   rules  one of { all* } | { any* }
+         Replaces the whole rule tree.
 
 Examples:
   Widen the window to 180 days:
-    $ kirora segments update <id> -d '{"rules":{"all":[{"type":"event","name":"Order Completed","count":{"operator":"equals","value":0},"withinDays":180},{"type":"list","listIds":["0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e"],"member":true}]}}'
+    $ kirora segments update <id> -d '{"rules":{"all":[{"type":"event","name":"Order Completed","count":{"operator":"equals","value":0},"within":{"value":180,"unit":"days"}},{"type":"list","listIds":["0192f3a2-1b3c-7e5d-8a21-4f6a7b8c9d0e"],"member":true}]}}'
 
 API reference: https://kirora.io/docs/api/reference/updateSegment
 ```

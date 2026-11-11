@@ -63,7 +63,7 @@ Creates a static list: membership is explicit, unlike a segment, which is evalua
 | Flag | |
 | --- | --- |
 | `--name <value>` | **Required.** Unique within the workspace, ignoring case. |
-| `--description <value>` |  |
+| `--description <value>`, `--no-description` (clears it) |  |
 
 ```text
 Examples:
@@ -124,7 +124,7 @@ Renames a list or changes its description. Membership is managed through the mem
 | Flag | |
 | --- | --- |
 | `--name <value>` | Unique within the workspace, ignoring case. |
-| `--description <value>` |  |
+| `--description <value>`, `--no-description` (clears it) |  |
 
 ```text
 Examples:
