@@ -16,7 +16,7 @@ Creates a topic. Names are unique in the workspace (`409 ALREADY_EXISTS`). Topic
 | Flag | |
 | --- | --- |
 | `--name <value>` | **Required.** Unique within the workspace. |
-| `--description <value>` |  |
+| `--description <value>`, `--no-description` (clears it) |  |
 | `--mode <value>` | Who the topic reaches: everyone who has not left, or only who joined. One of `opt_out`, `opt_in`. |
 
 ```text
@@ -77,7 +77,7 @@ Renames or re-describes a topic. `mode` is fixed once created: sending the other
 | Flag | |
 | --- | --- |
 | `--name <value>` | Unique within the workspace. |
-| `--description <value>` |  |
+| `--description <value>`, `--no-description` (clears it) |  |
 | `--mode <value>` | Who the topic reaches: everyone who has not left, or only who joined. One of `opt_out`, `opt_in`. |
 
 ```text

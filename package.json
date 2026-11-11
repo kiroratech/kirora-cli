@@ -1,6 +1,6 @@
 {
   "name": "@kirora/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The Kirora API from your terminal: contacts, messages, webhooks and more.",
   "keywords": [
     "kirora",
@@ -50,7 +50,7 @@
   "dependencies": {
     "@inquirer/confirm": "^6.3.5",
     "@inquirer/password": "^5.2.3",
-    "@kirora/node": "^0.1.0",
+    "@kirora/node": "^0.2.0",
     "commander": "^15.0.0"
   },
   "devDependencies": {

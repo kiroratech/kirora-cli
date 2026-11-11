@@ -79,20 +79,22 @@ Creates a campaign in `draft`, targeting email, push, or both. A draft saves unf
 | `--all-contacts`, `--no-all-contacts` | Send to all contacts: everyone its channels reach, with consent and suppressions applied as on any send. Choose at most one audience. |
 | `--list-ids <ids...>` | Send to these lists, up to 20: a member of any of them receives it once. Choose at most one audience. |
 | `--segment-id <id>` | Send to this segment. Choose at most one audience. |
-| `--topic-id <id>` | Send only to contacts the topic reaches. Omit to reach everyone with consent. |
+| `--topic-id <id>`, `--no-topic-id` (clears it) | Send only to contacts the topic reaches. Omit to reach everyone with consent. |
 | `--tags <values...>` | Tag names, up to 20, matched without case; a tag the workspace lacks is created. On update, replaces the tags whole: `[]` removes them all. |
 
 ```text
 Body fields only --data can carry (* required):
   audienceRules  one of { all* } | { any* }
+                 Send to contacts matching these rules.
   exclusions     { listIds, segmentIds }
                  Leave out the members of these lists and segments ("don't send to"); beside all contacts, lists or a segment, not rules, as rules exclude within themselves.
   messageLimits  { apply*, retryFor }
   utm            { enabled*, source, medium, campaign, content, term }
                  UTM parameters added to the links in the email.
   content        { email, push }
-                 The content for each selected channel.
-  abTest         { versions*, testPercent*, winnerBy, conversionGoalId, decideAfter* }
+                 The content for each selected channel. Default: {}.
+  abTest         { versions*, testPercent*, winnerBy: "clicks" | "opens" | "conversions", conversionGoalId, decideAfter* }
+                 Test 2 to 4 versions of the email or push on part of the audience, then send the winner to the rest.
   delivery       { rateLimit*, expiresAfter* }
                  How fast it goes out, and until when.
 
@@ -239,7 +241,7 @@ Sets when a draft sends, and moves it to `scheduled`; on a campaign already `sch
 ```text
 The body (--data) is one of:
   { type*: "fixed", sendAt* }
-  { type*: "local_time", localDateTime*, timezoneIfUnknown, ifTimeHasPassed }
+  { type*: "local_time", localDateTime*, timezoneIfUnknown, ifTimeHasPassed: "send_now" | "skip" | "next_day" }
 
 Examples:
   Everyone receives it at the same moment, 08:00 UTC:
@@ -337,9 +339,9 @@ Updates a draft campaign. Only campaigns still in `draft` can be changed; anythi
 | --- | --- |
 | `--name <value>` |  |
 | `--all-contacts`, `--no-all-contacts` | Send to all contacts. Any audience field replaces the audience whole: the one set is the new audience, and `false` or `null` alone leaves it without one. |
-| `--list-ids <ids...>` | Send to these lists, up to 20; replaces the audience whole. |
-| `--segment-id <id>` | Send to this segment; replaces the audience whole. |
-| `--topic-id <id>` | The topic to send under; `null` reaches everyone with consent. |
+| `--list-ids <ids...>`, `--no-list-ids` (clears it) | Send to these lists, up to 20; replaces the audience whole. |
+| `--segment-id <id>`, `--no-segment-id` (clears it) | Send to this segment; replaces the audience whole. |
+| `--topic-id <id>`, `--no-topic-id` (clears it) | The topic to send under; `null` reaches everyone with consent. |
 | `--channels <values...>` | The channels to send on. Send `content` with it so each has its content. |
 | `--tags <values...>` | Replaces the tags whole (`[]` removes them), matched without case. Tags change on a campaign in any status; the rest of the body only on a draft. |
 | `--expected-revision <number>` | The `revision` you read. When it is no longer current the update is refused with 409 `REVISION_CONFLICT`, whose details carry the current revision, `updatedAt` and who made the change. Omit it to overwrite whatever is there. |
@@ -355,7 +357,7 @@ Body fields only --data can carry (* required):
                  UTM parameters added to links; `null` removes them.
   content        { email, push }
                  The content for each selected channel.
-  abTest         { versions*, testPercent*, winnerBy, conversionGoalId, decideAfter* }
+  abTest         { versions*, testPercent*, winnerBy: "clicks" | "opens" | "conversions", conversionGoalId, decideAfter* }
                  Replaces the A/B test whole; `null` removes it.
   delivery       { rateLimit*, expiresAfter* }
                  Replaces throttling and expiry whole; `null` removes them.

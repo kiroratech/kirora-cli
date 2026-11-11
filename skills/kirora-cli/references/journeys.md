@@ -39,7 +39,7 @@ API reference: https://kirora.io/docs/api/reference/getJourneyActivationCheck
 
 Create a journey. `POST /v1/journeys`, needs `journeys:write`.
 
-Creates a multi-step automation in a draft state. A draft saves unfinished: it needs a name and a trigger, but may have no steps yet and send steps without their content; what is given is checked. Each step has an `id` you choose, unique within the journey, and transitions (`nextStep`, `onMatchStep`, `otherwiseStep`, split paths) name those ids: a step whose `nextStep` is omitted goes on to the next step in `steps`, `null` ends the journey there, and a branch's last step should set `null`. A transition to a step that does not exist, or one that leads back to a step already passed (a loop), is a 400 at that field. A journey does not run until it is activated, which needs it whole (409 `DRAFT_INCOMPLETE` lists each missing field in `errors`); edit it with `PATCH /v1/journeys/{id}`. An email step is built from its design (`templateSnapshot`): any `html` or `text` sent beside it is replaced by the design's rendering. A send step may set `onUnreachableStep` (the contact cannot receive the channel) and `onFailureStep`: taken when the message cannot be queued because the plan's sending allowance is used up (it is recorded `skipped`, reason `plan_limit_reached`). Delivery happens after the enrollment has moved on, so a later bounce or provider error does not branch. A contact enters one repeatable journey at most 10 times an hour, whatever its `waitAfterEntry`; past that, entries are skipped and the workspace admins are notified (`journey_loop_detected`).
+Creates a multi-step automation in a draft state. A draft saves unfinished: it needs a name and a trigger, but may have no steps yet and send steps without their content; what is given is checked. Each step has an `id` you choose, unique within the journey, and transitions (`nextStep`, `onMatchStep`, `otherwiseStep`, split paths) name those ids: a step whose `nextStep` is omitted goes on to the next step in `steps`, `null` ends the journey there, and a branch's last step should set `null`. A transition to a step that does not exist, or one that leads back to a step already passed (a loop), is a 400 at that field. A journey does not run until it is activated, which needs it whole (409 `DRAFT_INCOMPLETE` lists each missing field in `errors`); edit it with `PATCH /v1/journeys/{id}`. An email step is built from its design (`templateSnapshot`): any `html` or `text` sent beside it is replaced by the design's rendering. A send step may set `onUnreachableStep` (the contact cannot receive the channel) and `onFailureStep`: taken when the message cannot be queued because the plan's sending allowance is used up or its marketing contacts are past the plan's limit (it is recorded `skipped`, reason `plan_limit_reached`). Delivery happens after the enrollment has moved on, so a later bounce or provider error does not branch. A contact enters one repeatable journey at most 10 times an hour, whatever its `waitAfterEntry`; past that, entries are skipped and the workspace admins are notified (`journey_loop_detected`).
 
 - `-d, --data` takes the whole JSON body; flags set fields on top.
 - `--idempotency-key`: reuse the same key to retry safely.
@@ -47,17 +47,20 @@ Creates a multi-step automation in a draft state. A draft saves unfinished: it n
 | Flag | |
 | --- | --- |
 | `--name <value>` | **Required.** |
-| `--max-entries <number>` | The most enrollments the journey starts over its life; `null` or unset has no cap. |
+| `--max-entries <number>`, `--no-max-entries` (clears it) | The most enrollments the journey starts over its life; `null` or unset has no cap. |
+| `--min-hours-between-sends <number>`, `--no-min-hours-between-sends` (clears it) | The least time, in hours (1–168), between two of this journey's messages to one contact, across all their runs: a send due sooner waits, and is not dropped. `null` or unset: no gap. |
 | `--tags <values...>` | Tag names, up to 20, matched without case; a tag the workspace lacks is created. On update, replaces the tags whole: `[]` removes them all. |
 
 ```text
 Body fields only --data can carry (* required):
-  trigger*        one of { type*: "event", name*, where, reentry } | { type*: "list", listId, reentry } | { type*: "segment", segmentId, on, reentry } | { type*: "form", formId, where, reentry } | { type*: "attribute", key*, where, reentry } | { field*, recurrence*, offset, time*, leapDay, type*: "date" }
-  exitConditions  list of one of { type*: "event", name*, where } | { type*: "conversion_goal" }
-                  Events that end a contact's enrollment early.
-  steps*          list of one of { id*, name, type*: "wait", duration, until, businessDays, window, nextStep } | { id*, name, type*: "wait_until", event*, timeout*, onMatchStep*, onTimeoutStep* } | { id*, name, type*: "digest", gatherFor*, nextStep } | { id*, name, type*: "send", channel*: "email", content*, nextStep, onUnreachableStep, onFailureStep, topicId, transactional } | { id*, name, type*: "send", channel*: "push", content*, nextStep, onUnreachableStep, onFailureStep, topicId } | { id*, name, type*: "branch", where*, onMatchStep*, otherwiseStep* } | { id*, name, type*: "filter", mode*, rules*, onMatchStep*, otherwiseStep } | { id*, name, type*: "split", paths*, otherwiseStep* } | { id*, name, type*: "random_split", paths* } | { id*, name, type*: "action", action*, nextStep }
+  trigger*        one of { type*: "event", name*, where, reentry } | { type*: "list", listId, reentry } | { type*: "segment", segmentId, on: "enter" | "exit", reentry } | { type*: "form", formId, where, reentry } | { type*: "attribute", key*, where, reentry } | { field*, recurrence*: "once" | "annual", offset, time*, leapDay: "feb28" | "mar1" | "skip", type*: "date" }
+                  What starts an enrollment.
+  exitConditions  list of one of { type*: "event", name*, where, matchTriggerProperty, includeEarlierEvents } | { type*: "conversion_goal" }
+                  Events that end a contact's enrollment early. Default: [].
+  steps*          list of one of { id*, name, type*: "wait", duration, until, businessDays, window, nextStep } | { id*, name, type*: "wait_until", event*, timeout*, onMatchStep*, onTimeoutStep* } | { id*, name, type*: "digest", gatherFor*, nextStep } | { id*, name, type*: "send", channel*: "email", content*, nextStep, onUnreachableStep, onFailureStep, topicId, transactional } | { id*, name, type*: "send", channel*: "push", content*, nextStep, onUnreachableStep, onFailureStep, topicId } | { id*, name, type*: "branch", where*, onMatchStep*, otherwiseStep* } | { id*, name, type*: "filter", mode*: "once" | "continuous", rules*, onMatchStep*, otherwiseStep } | { id*, name, type*: "split", paths*, otherwiseStep* } | { id*, name, type*: "random_split", paths* } | { id*, name, type*: "action", action*, nextStep }
                   The steps.
   messageLimits   { apply*, retryFor }
+                  For the whole journey: a person over a limit skips that send and moves on.
   utm             { enabled*, source, medium, campaign, content, term }
                   Link tags for the journey's email, as on campaigns; unset follows the workspace.
 
@@ -176,7 +179,7 @@ API reference: https://kirora.io/docs/api/reference/pauseJourney
 
 Simulate a journey. `POST /v1/journeys/{id}/simulate`, needs `journeys:read`.
 
-Previews an enrollment without sending. `entry` says whether the contact would enter now: a date journey needs a valid date in its field; an event journey checks the supplied eventProperties against the trigger's conditions, then re-entry. The path follows branches on eventProperties and filters and splits on the contact as they are now; a wait-until step takes its match path. Each send step is checked against suppression, consent, topics and devices: `would_send`, `unreachable` (takes the fallback path), `failed` (the email allowance is used up and the step has `onFailureStep`) or `would_skip`, with the refusal code in `reason` (`DRAFT_INCOMPLETE` for a send step not yet finished: a draft simulates too; `PLAN_LIMIT_REACHED` when the email allowance is used up). An ended journey returns `journey_ended`; a draft or paused one is previewed as if live. A date journey enters only when its date is due now in the contact's timezone (`date_not_due` otherwise), once per occurrence; when due, its branches read the date occurrence instead of `eventProperties`. `maxEntries` and the hourly re-entry cap apply as they do live. Message limits, the push allowance and send-time scheduling are not previewed.
+Previews an enrollment without sending. `entry` says whether the contact would enter now: a date journey needs a valid date in its field; an event journey checks the supplied eventProperties against the trigger's conditions, then re-entry. The path follows branches on eventProperties and filters and splits on the contact as they are now; a wait-until step takes its match path. Each send step is checked against suppression, consent, topics and devices: `would_send`, `unreachable` (takes the fallback path), `failed` (a plan limit refuses it and the step has `onFailureStep`) or `would_skip`, with the refusal code in `reason` (`DRAFT_INCOMPLETE` for a send step not yet finished: a draft simulates too; `PLAN_LIMIT_REACHED` with `planLimit`: `emails` when the email allowance is used up, `marketing_contacts`, on any channel, when the workspace's marketing contacts are past the plan's limit and its tolerance). An ended journey returns `journey_ended`; a draft or paused one is previewed as if live. A date journey enters only when its date is due now in the contact's timezone (`date_not_due` otherwise), once per occurrence; when due, its branches read the date occurrence instead of `eventProperties`. `maxEntries` and the hourly re-entry cap apply as they do live. Message limits, the push allowance and send-time scheduling are not previewed.
 
 - `-d, --data` takes the whole JSON body; flags set fields on top.
 
@@ -187,7 +190,7 @@ Previews an enrollment without sending. `entry` says whether the contact would e
 ```text
 Body fields only --data can carry (* required):
   eventProperties  object
-                   Properties of a trigger event to simulate, checked against the trigger's conditions.
+                   Properties of a trigger event to simulate, checked against the trigger's conditions. Default: {}.
 
 Examples:
   Preview one contact without sending:
@@ -223,18 +226,21 @@ Updates a journey's definition. Works while the journey is live, where the edit 
 | Flag | |
 | --- | --- |
 | `--name <value>` |  |
-| `--max-entries <number>` | The most enrollments the journey starts over its life; `null` or unset has no cap. |
+| `--max-entries <number>`, `--no-max-entries` (clears it) | The most enrollments the journey starts over its life; `null` or unset has no cap. |
+| `--min-hours-between-sends <number>`, `--no-min-hours-between-sends` (clears it) | The least time, in hours (1–168), between two of this journey's messages to one contact, across all their runs: a send due sooner waits, and is not dropped. `null` or unset: no gap. |
 | `--tags <values...>` | Replaces the tags whole (`[]` removes them), matched without case. Tags change on a journey in any status, an agent key included: they send nothing. |
 | `--expected-revision <number>` | The `revision` you read. When it is no longer current the update is refused with 409 `REVISION_CONFLICT`, whose details carry the current revision, `updatedAt` and who made the change. Omit it to overwrite whatever is there. |
 
 ```text
 Body fields only --data can carry (* required):
-  trigger         one of { type*: "event", name*, where, reentry } | { type*: "list", listId, reentry } | { type*: "segment", segmentId, on, reentry } | { type*: "form", formId, where, reentry } | { type*: "attribute", key*, where, reentry } | { field*, recurrence*, offset, time*, leapDay, type*: "date" }
-  exitConditions  list of one of { type*: "event", name*, where } | { type*: "conversion_goal" }
+  trigger         one of { type*: "event", name*, where, reentry } | { type*: "list", listId, reentry } | { type*: "segment", segmentId, on: "enter" | "exit", reentry } | { type*: "form", formId, where, reentry } | { type*: "attribute", key*, where, reentry } | { field*, recurrence*: "once" | "annual", offset, time*, leapDay: "feb28" | "mar1" | "skip", type*: "date" }
+                  What starts an enrollment; replaces the trigger whole.
+  exitConditions  list of one of { type*: "event", name*, where, matchTriggerProperty, includeEarlierEvents } | { type*: "conversion_goal" }
                   Events that end a contact's enrollment early.
-  steps           list of one of { id*, name, type*: "wait", duration, until, businessDays, window, nextStep } | { id*, name, type*: "wait_until", event*, timeout*, onMatchStep*, onTimeoutStep* } | { id*, name, type*: "digest", gatherFor*, nextStep } | { id*, name, type*: "send", channel*: "email", content*, nextStep, onUnreachableStep, onFailureStep, topicId, transactional } | { id*, name, type*: "send", channel*: "push", content*, nextStep, onUnreachableStep, onFailureStep, topicId } | { id*, name, type*: "branch", where*, onMatchStep*, otherwiseStep* } | { id*, name, type*: "filter", mode*, rules*, onMatchStep*, otherwiseStep } | { id*, name, type*: "split", paths*, otherwiseStep* } | { id*, name, type*: "random_split", paths* } | { id*, name, type*: "action", action*, nextStep }
+  steps           list of one of { id*, name, type*: "wait", duration, until, businessDays, window, nextStep } | { id*, name, type*: "wait_until", event*, timeout*, onMatchStep*, onTimeoutStep* } | { id*, name, type*: "digest", gatherFor*, nextStep } | { id*, name, type*: "send", channel*: "email", content*, nextStep, onUnreachableStep, onFailureStep, topicId, transactional } | { id*, name, type*: "send", channel*: "push", content*, nextStep, onUnreachableStep, onFailureStep, topicId } | { id*, name, type*: "branch", where*, onMatchStep*, otherwiseStep* } | { id*, name, type*: "filter", mode*: "once" | "continuous", rules*, onMatchStep*, otherwiseStep } | { id*, name, type*: "split", paths*, otherwiseStep* } | { id*, name, type*: "random_split", paths* } | { id*, name, type*: "action", action*, nextStep }
                   The steps.
   messageLimits   { apply*, retryFor }
+                  For the whole journey: a person over a limit skips that send and moves on.
   utm             { enabled*, source, medium, campaign, content, term }
                   Link tags for the journey's email, as on campaigns; unset follows the workspace.
 

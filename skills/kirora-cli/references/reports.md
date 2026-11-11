@@ -29,7 +29,7 @@ API reference: https://kirora.io/docs/api/reference/listCampaignReports
 
 Retrieve a funnel report. `POST /v1/reports/funnel`, needs `reports:read`.
 
-Counts the contacts who did each step's event, in order. A contact enters with the first step's earliest event in the window (`from` inclusive, `to` exclusive; a date bound is the start of that day in the workspace timezone; default the last 30 days), and reaches a later step with an event after the previous step's, within `withinDays` of entering. Each contact counts once per step, however many times they repeat it. Events past retention are no longer held. Needs a plan with advanced reports: without one, 403 `PLAN_FEATURE_UNAVAILABLE`. A read sent as `POST` for its body of steps: it takes no `Idempotency-Key`.
+Counts the contacts who did each step's event, in order. A contact enters with the first step's earliest event in the window (`from` inclusive, `to` exclusive; a date bound is the start of that day in the workspace timezone; default the last 30 days), and reaches a later step with an event after the previous step's, within `conversionWindow` of entering. Each contact counts once per step, however many times they repeat it. Events past retention are no longer held. Needs a plan with advanced reports: without one, 403 `PLAN_FEATURE_UNAVAILABLE`. A read sent as `POST` for its body of steps: it takes no `Idempotency-Key`.
 
 - `-d, --data` takes the whole JSON body; flags set fields on top.
 
@@ -37,16 +37,17 @@ Counts the contacts who did each step's event, in order. A contact enters with t
 | --- | --- |
 | `--from <date|date-time>` | Start of the window, inclusive: a date-time, or a date meaning the start of that day in the workspace timezone. Give with `to`; omit both for the last 30 days. |
 | `--to <date|date-time>` | End of the window, exclusive, in the same forms. To include a whole last day, pass the day after it: `from=2026-10-01&to=2026-10-08` covers 1 to 7 October. No later than the end of today; a window touches at most 366 days. Give with `from`. |
-| `--within-days <number>` | How long after the first step a contact has to finish the rest. |
 
 ```text
 Body fields only --data can carry (* required):
-  steps*  list of { eventName*, where }
-          The events, in order.
+  steps*            list of { eventName*, where }
+                    The events, in order.
+  conversionWindow  { value*, unit*: "seconds" | "minutes" | "hours" | "days" }
+                    How long after the first step a contact has to finish the rest: 1 minute to 90 days. Default: {"value":7,"unit":"days"}.
 
 Examples:
   Cart to order:
-    $ kirora reports funnel -d '{"from":"2026-09-01","to":"2026-10-01","steps":[{"eventName":"Cart Abandoned"},{"eventName":"Order Completed","where":[{"property":"total","operator":"gte","value":"20"}]}],"withinDays":7}'
+    $ kirora reports funnel -d '{"from":"2026-09-01","to":"2026-10-01","steps":[{"eventName":"Cart Abandoned"},{"eventName":"Order Completed","where":[{"property":"total","operator":"gte","value":"20"}]}],"conversionWindow":{"value":7,"unit":"days"}}'
 
 API reference: https://kirora.io/docs/api/reference/getFunnelReport
 ```

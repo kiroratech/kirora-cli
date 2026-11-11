@@ -43,7 +43,7 @@ Queues a CSV of the message log. The body takes the filters of `GET /v1/messages
 | Flag | |
 | --- | --- |
 | `--status <value>` | Only messages in this status. One of `queued`, `sending`, `skipped`, `sent`, `failed`, `delivered`, `bounced`, `complained`. |
-| `--channel <value>` | One of `email`, `push`. |
+| `--channel <value>` | Only messages on this channel. One of `email`, `push`. |
 | `--recipient <value>` | The exact address the message went to. |
 | `--query <value>` | Part of the recipient's email address or name, matched against the contact the message went to. |
 | `--message-type <value>` | Only messages of this type: `marketing` or `transactional`. One of `marketing`, `transactional`. |
@@ -115,6 +115,10 @@ Lists the workspace message log: one row per outbound message from campaigns, jo
 | `--step-id <id>` | With `journeyId`, only messages from the journey's step with this id, in every version of its steps. |
 | `--template-id <id>` | Only transactional sends from this stored template; no other message records one. |
 | `--correlation-id <id>` | Only the transactional sends that carried this `correlationId`. |
+| `--sent <value>` | `true`: handed to the provider, whatever happened after; `false`: never sent (queued, failed before sending or skipped). One of `true`, `false`. |
+| `--delivered <value>` | `true`: delivery was confirmed, even if a complaint or bounce came later; `false`: never confirmed. One of `true`, `false`. |
+| `--bounced <value>` | `true`: a hard bounce was recorded, even if a complaint came later; `false`: none. A test send's acted-out bounce is no recorded bounce. One of `true`, `false`. |
+| `--complained <value>` | `true`: a complaint was recorded; `false`: none. A test send's acted-out complaint is no recorded complaint. One of `true`, `false`. |
 | `--opened <value>` | `true`: opened (or clicked) at least once; `false`: never. One of `true`, `false`. |
 | `--clicked <value>` | `true`: a link clicked at least once; `false`: never. One of `true`, `false`. |
 | `--created-after <date-time>` | Only messages accepted at or after this time (inclusive). |

@@ -28,15 +28,15 @@ Creates a hosted form (a sign-up, contact, waitlist or registration form), in dr
 | Flag | |
 | --- | --- |
 | `--name <value>` | **Required.** |
-| `--heading <value>` | What visitors see above the fields; `null` clears it. |
-| `--intro <value>` | A line or two under the heading; `null` clears it. |
-| `--slug <value>` | The readable part of the form's link (`forms.kirora.io/f/acme-newsletter`), unique across every workspace; `null` clears it. A new slug frees the old one, which then stops working; the link with `publicId` always works, so use that one on print and QR codes. |
+| `--heading <value>`, `--no-heading` (clears it) | What visitors see above the fields; `null` clears it. |
+| `--intro <value>`, `--no-intro` (clears it) | A line or two under the heading; `null` clears it. |
+| `--slug <value>`, `--no-slug` (clears it) | The readable part of the form's link (`forms.kirora.io/f/acme-newsletter`), unique across every workspace; `null` clears it. A new slug frees the old one, which then stops working; the link with `publicId` always works, so use that one on print and QR codes. |
 | `--accepting-submissions`, `--no-accepting-submissions` | `false` closes the form by hand, whatever its closing time and limit. |
-| `--closes-at <date-time>` | When the form closes; `null` for never. |
-| `--max-submissions <number>` | The form closes once it has taken this many submissions (honeypot catches aside); `null` for no limit. |
-| `--closed-message <value>` | What a closed form shows; `null` shows the default wording. |
+| `--closes-at <date-time>`, `--no-closes-at` (clears it) | When the form closes; `null` for never. |
+| `--max-submissions <number>`, `--no-max-submissions` (clears it) | The form closes once it has taken this many submissions (honeypot catches aside); `null` for no limit. |
+| `--closed-message <value>`, `--no-closed-message` (clears it) | What a closed form shows; `null` shows the default wording. |
 | `--location <value>` | Where the form sits on your site, a label you choose (`website-footer`, `checkout-page`). Recorded on each submission, as `properties.location` on its `contact.form_submitted` event and on the `form.submitted` webhook, which is how a segment or journey uses it. Defaults to `form`. |
-| `--list-id <id>` | The list every submitter is added to; `null` while the draft has none. A form cannot be published without one. |
+| `--list-id <id>`, `--no-list-id` (clears it) | The list every submitter is added to; `null` while the draft has none. A form cannot be published without one. |
 | `--allowed-origins <urls...>` | Site origins (scheme and host, no path) the embed may load from, such as `https://example.com`. |
 | `--double-opt-in`, `--no-double-opt-in` | Ask submitters to confirm by email before they are subscribed. |
 | `--notify-user-ids <ids...>` | Users of this workspace to tell about each submission, in the bell and by email (each can turn the email off). Each must be a user here. |
@@ -45,18 +45,18 @@ Creates a hosted form (a sign-up, contact, waitlist or registration form), in dr
 Body fields only --data can carry (* required):
   share         { title, description, imageUrl }
                 How the form's link previews in chat and social apps.
-  fields*       list of { key*, type*, label*, placeholder, required, options }
+  fields*       list of { key*, type*: "email" | "text" | "textarea" | "select" | "checkbox" | "date" | "phone", label*, placeholder, required, options }
                 The fields, top to bottom.
   hiddenFields  object
-                Values saved on each submitter with no field shown, each a contact attribute: fixed (`{ "source": "fixed", "value": "spring" }`), or taken from the link (`{ "source": "link", "param": "utm_campaign" }`).
-  theme         { mode, accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily, borderRadius, buttonLabel, inputs, button, layout }
+                Values saved on each submitter with no field shown, each a contact attribute: fixed (`{ "source": "fixed", "value": "spring" }`), or taken from the link (`{ "source": "link", "param": "utm_campaign" }`). Default: {}.
+  theme         { mode: "light" | "dark", accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily: "system" | "sans" | "serif" | "mono" | "inter" | "roboto" | "open-sans" | "lato" | "montserrat" | "poppins" | "source-sans-3" | "nunito" | "raleway" | "work-sans" | "dm-sans" | "manrope" | "ibm-plex-sans" | "noto-sans" | "rubik" | "karla" | "merriweather" | "lora" | "playfair-display" | "libre-baskerville" | "source-serif-4" | "eb-garamond" | "ibm-plex-mono" | "jetbrains-mono", borderRadius, buttonLabel, inputs, button, layout }
   display       one of { mode*: "inline" } | { mode*: "popup", delay, scrollPercent, exitIntent, urlMatch, hideFor, hideAfterSubmit }
   captcha       one of { mode*: "kirora" } | { mode*: "own", siteKey*, secretKey }
                 CAPTCHA for submissions: `{ mode: "kirora" }` (the default on a new form), `{ mode: "own", siteKey, secretKey }` for your Cloudflare Turnstile widget, or `null` for none.
   consent*      { required*: true, label* }
                 The consent box every submitter must tick.
   success       one of { type*: "message", message* } | { type*: "redirect", redirectUrl* }
-                What happens after a submission.
+                What happens after a submission. Default: {"type":"message","message":"Thanks for signing up."}.
 
 Examples:
   A newsletter signup with double opt-in:
@@ -166,7 +166,7 @@ Body fields only --data can carry (* required):
   fields*  object
            Answers by field `key`.
   choices  object
-           Each checkbox field's ticked option values, by field `key`.
+           Each checkbox field's ticked option values, by field `key`. Default: {}.
 
 Examples:
   Sign up a person your system collected; they confirm by email:
@@ -210,15 +210,15 @@ Changes a form's fields, consent text or success behaviour. Existing submissions
 | Flag | |
 | --- | --- |
 | `--name <value>` |  |
-| `--heading <value>` | What visitors see above the fields; `null` clears it. |
-| `--intro <value>` | A line or two under the heading; `null` clears it. |
-| `--slug <value>` | The readable part of the form's link (`forms.kirora.io/f/acme-newsletter`), unique across every workspace; `null` clears it. A new slug frees the old one, which then stops working; the link with `publicId` always works, so use that one on print and QR codes. |
+| `--heading <value>`, `--no-heading` (clears it) | What visitors see above the fields; `null` clears it. |
+| `--intro <value>`, `--no-intro` (clears it) | A line or two under the heading; `null` clears it. |
+| `--slug <value>`, `--no-slug` (clears it) | The readable part of the form's link (`forms.kirora.io/f/acme-newsletter`), unique across every workspace; `null` clears it. A new slug frees the old one, which then stops working; the link with `publicId` always works, so use that one on print and QR codes. |
 | `--accepting-submissions`, `--no-accepting-submissions` | `false` closes the form by hand, whatever its closing time and limit. |
-| `--closes-at <date-time>` | When the form closes; `null` for never. |
-| `--max-submissions <number>` | The form closes once it has taken this many submissions (honeypot catches aside); `null` for no limit. |
-| `--closed-message <value>` | What a closed form shows; `null` shows the default wording. |
+| `--closes-at <date-time>`, `--no-closes-at` (clears it) | When the form closes; `null` for never. |
+| `--max-submissions <number>`, `--no-max-submissions` (clears it) | The form closes once it has taken this many submissions (honeypot catches aside); `null` for no limit. |
+| `--closed-message <value>`, `--no-closed-message` (clears it) | What a closed form shows; `null` shows the default wording. |
 | `--location <value>` | Where the form sits on your site, a label you choose (`website-footer`, `checkout-page`). Recorded on each submission, as `properties.location` on its `contact.form_submitted` event and on the `form.submitted` webhook, which is how a segment or journey uses it. |
-| `--list-id <id>` | The list every submitter is added to; `null` clears it, which only a draft may. |
+| `--list-id <id>`, `--no-list-id` (clears it) | The list every submitter is added to; `null` clears it, which only a draft may. |
 | `--allowed-origins <urls...>` | Site origins (scheme and host, no path) the embed may load from. |
 | `--double-opt-in`, `--no-double-opt-in` | Ask submitters to confirm by email before they are subscribed. |
 | `--notify-user-ids <ids...>` | Users of this workspace to tell about each submission, in the bell and by email (each can turn the email off). Each must be a user here. |
@@ -227,11 +227,11 @@ Changes a form's fields, consent text or success behaviour. Existing submissions
 Body fields only --data can carry (* required):
   share         { title, description, imageUrl }
                 How the form's link previews in chat and social apps.
-  fields        list of { key*, type*, label*, placeholder, required, options }
+  fields        list of { key*, type*: "email" | "text" | "textarea" | "select" | "checkbox" | "date" | "phone", label*, placeholder, required, options }
                 The fields, top to bottom.
   hiddenFields  object
                 Values saved on each submitter with no field shown: fixed, or taken from the link.
-  theme         { mode, accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily, borderRadius, buttonLabel, inputs, button, layout }
+  theme         { mode: "light" | "dark", accentColor, backgroundColor, textColor, buttonColor, buttonTextColor, fontFamily: "system" | "sans" | "serif" | "mono" | "inter" | "roboto" | "open-sans" | "lato" | "montserrat" | "poppins" | "source-sans-3" | "nunito" | "raleway" | "work-sans" | "dm-sans" | "manrope" | "ibm-plex-sans" | "noto-sans" | "rubik" | "karla" | "merriweather" | "lora" | "playfair-display" | "libre-baskerville" | "source-serif-4" | "eb-garamond" | "ibm-plex-mono" | "jetbrains-mono", borderRadius, buttonLabel, inputs, button, layout }
   display       one of { mode*: "inline" } | { mode*: "popup", delay, scrollPercent, exitIntent, urlMatch, hideFor, hideAfterSubmit }
   captcha       one of { mode*: "kirora" } | { mode*: "own", siteKey*, secretKey }
                 CAPTCHA for submissions: `{ mode: "kirora" }` (the default on a new form), `{ mode: "own", siteKey, secretKey }` for your Cloudflare Turnstile widget, or `null` for none.

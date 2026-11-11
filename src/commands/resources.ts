@@ -21,6 +21,8 @@ type Field = {
   flag: string;
   alias?: string;
   kind: 'string' | 'number' | 'boolean' | 'list' | 'file';
+  /** The value can be `null`, which `--no-<flag>` sends to clear it. */
+  nullable?: boolean;
   placeholder?: string;
   description?: string;
   required?: true;
@@ -357,6 +359,8 @@ function withOption(command: Command, field: Field, mandatory = false): FieldOpt
   if (mandatory) options[0]!.makeOptionMandatory();
   if (field.kind === 'boolean') {
     command.addOption(new Option(`--no-${field.flag}`, 'the same, as false'));
+  } else if (field.nullable) {
+    command.addOption(new Option(`--no-${field.flag}`, 'the same, cleared (null)'));
   }
   return { field, key: options[0]!.attributeName() };
 }
@@ -369,7 +373,10 @@ async function jsonBody(
 ): Promise<unknown> {
   const fields = Object.fromEntries(
     options.flatMap(({ field, key }) =>
-      values[key] === undefined ? [] : [[field.name, values[key]]],
+      values[key] === undefined
+        ? []
+        : // A nullable field's `--no-<flag>` sets it to false: send null.
+          [[field.name, field.nullable && values[key] === false ? null : values[key]]],
     ),
   );
   const data = values.data as string | undefined;

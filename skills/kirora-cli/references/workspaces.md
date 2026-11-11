@@ -31,6 +31,9 @@ Creates a child workspace for one tenant of your product, identified by your own
 | `--external-id <id>` | **Required.** Your own id for the tenant (up to 128 letters, digits, `.`, `:`, `_`, `-`); unique among your workspaces. |
 | `--country <value>` | **Required.** Two-letter ISO 3166-1 country code. |
 | `--timezone <value>` | IANA timezone, such as `Europe/Berlin`. |
+| `--website <url>`, `--no-website` (clears it) | The business's website. |
+| `--mail-kind <value>`, `--no-mail-kind` (clears it) | What the workspace sends. One of `marketing`, `transactional`, `both`. |
+| `--contact-opt-in <value>`, `--no-contact-opt-in` (clears it) | How its contacts agreed to hear from it: a signup form, checkout, an app. |
 
 ```text
 Examples:
@@ -116,6 +119,9 @@ Changes a tenant workspace's name, country or timezone; a field left out is unch
 | `--name <value>` |  |
 | `--country <value>` | Two-letter ISO 3166-1 country code. |
 | `--timezone <value>` | IANA timezone, such as `Europe/Berlin`. |
+| `--website <url>`, `--no-website` (clears it) | The business's website. |
+| `--mail-kind <value>`, `--no-mail-kind` (clears it) | What the workspace sends. One of `marketing`, `transactional`, `both`. |
+| `--contact-opt-in <value>`, `--no-contact-opt-in` (clears it) | How its contacts agreed to hear from it: a signup form, checkout, an app. |
 
 ```text
 Examples:

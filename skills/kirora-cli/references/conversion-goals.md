@@ -24,9 +24,10 @@ Counts an event as a conversion when the contact was sent the campaign or journe
 
 ```text
 Body fields only --data can carry (* required):
-  where              list of { property*, operator*, value* }
+  where              list of { property*, operator*: "equals" | "notEquals" | "gt" | "gte" | "lt" | "lte", value* }
                      Property conditions the event must meet, up to 5; with several names, each of them must meet them.
-  attributionWindow  { value*, unit* }
+  attributionWindow  { value*, unit*: "seconds" | "minutes" | "hours" | "days" }
+                     How long after a message the event still counts: 1 to 3,650 whole days, default 30 days. Default: {"value":30,"unit":"days"}.
 
 Examples:
   Count orders after the journey's messages as conversions, with revenue:
@@ -93,12 +94,13 @@ Changes the attribution window, value property or currency for events processed 
 
 | Flag | |
 | --- | --- |
-| `--value-property <value>` |  |
-| `--currency <value>` |  |
+| `--value-property <value>`, `--no-value-property` (clears it) |  |
+| `--currency <value>`, `--no-currency` (clears it) |  |
 
 ```text
 Body fields only --data can carry (* required):
-  attributionWindow  { value*, unit* }
+  attributionWindow  { value*, unit*: "seconds" | "minutes" | "hours" | "days" }
+                     How long after a message the event still counts: 1 to 3,650 whole days.
 
 Examples:
   Credit orders up to a week after a message:
