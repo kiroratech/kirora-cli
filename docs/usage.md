@@ -257,7 +257,6 @@ output. The smoke test uses a temporary config directory; it still makes real AP
 runs tests on Linux, macOS, and Windows with Node.js 22 and 24.
 [Skill evaluations](https://github.com/kiroratech/kirora-cli/blob/main/skill-evals/kirora-cli/evals.json) describe agent behavior checks.
 
-To release, bump `version` in `package.json` and merge it to `main`, or push a matching
-`v*` tag. The [release workflow](https://github.com/kiroratech/kirora-cli/blob/main/.github/workflows/release.yml)
+To release, bump `version` in `package.json` and merge it to `main`. The [release workflow](https://github.com/kiroratech/kirora-cli/blob/main/.github/workflows/release.yml)
 publishes that version to npm if it isn't there yet, with npm trusted publishing: no npm
 token is stored. `pnpm check:package` runs the same install check locally.
